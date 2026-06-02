@@ -2,8 +2,6 @@
 
 An end-to-end wearable-data system that turns Garmin activity and wellness exports into interpretable athlete-state monitoring, learned frontier signals, and actionable training feedback.
 
-The project is built for the CS 153 “One-Person Frontier Lab” final project: one person using modern AI/developer tools to create a working product and research artifact from private real-world data.
-
 ## What it does
 
 Athlete State Lab ingests multi-year Garmin exports and builds a local web application for exploring training state, recovery risk, and bone-stress-oriented running-load patterns.
