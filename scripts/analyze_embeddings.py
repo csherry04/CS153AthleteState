@@ -94,6 +94,25 @@ def value_or_none(value: object) -> float | None:
     return float(value)
 
 
+def previous_day_values(frame: pd.DataFrame, date: pd.Timestamp, columns: list[str]) -> dict[str, float | None]:
+    previous_date = date - pd.Timedelta(days=1)
+    previous = frame[frame["date"].dt.date == previous_date.date()]
+    if previous.empty:
+        return {f"previous_day_{column}": None for column in columns}
+    row = previous.iloc[-1]
+    return {f"previous_day_{column}": value_or_none(row.get(column)) for column in columns}
+
+
+def recent_percentile(frame: pd.DataFrame, date: pd.Timestamp, column: str, value: float | None, window_days: int = 28) -> float | None:
+    if value is None or pd.isna(value) or column not in frame.columns:
+        return None
+    start = date - pd.Timedelta(days=window_days)
+    history = pd.to_numeric(frame.loc[(frame["date"] < date) & (frame["date"] >= start), column], errors="coerce").dropna()
+    if history.empty:
+        return None
+    return float((history <= value).mean() * 100)
+
+
 def build_anomaly_report(
     frame: pd.DataFrame,
     top_n: int,
@@ -109,12 +128,16 @@ def build_anomaly_report(
     hrv_col = first_available(frame, PRIMARY_COLUMNS["hrv"])
     resting_hr_col = first_available(frame, PRIMARY_COLUMNS["resting_hr"])
     activity_cols = [column for column in ACTIVITY_COLUMNS if column in frame.columns]
+    previous_context_cols = [column for column in [load_col, "activity_duration_seconds", "activity_distance_m", "activity_count"] if column]
 
     rows = []
     for anomaly_idx, row in ranked.iterrows():
+        date = pd.to_datetime(row["date"])
         nearest = nearest_previous_normal_days(frame, anomaly_idx, z_cols, normal_z_max, neighbors)
+        previous_values = previous_day_values(frame, date, previous_context_cols)
+        previous_load = previous_values.get(f"previous_day_{load_col}") if load_col else None
         report_row = {
-            "date": pd.to_datetime(row["date"]).date().isoformat(),
+            "date": date.date().isoformat(),
             "split": row.get("split"),
             "anomaly_zscore": value_or_none(row.get("anomaly_zscore")),
             "embedding_distance": value_or_none(row.get("embedding_distance")),
@@ -124,8 +147,10 @@ def build_anomaly_report(
             "load": value_or_none(row.get(load_col)) if load_col else None,
             "hrv": value_or_none(row.get(hrv_col)) if hrv_col else None,
             "resting_hr": value_or_none(row.get(resting_hr_col)) if resting_hr_col else None,
+            "previous_day_load_percentile_28d": recent_percentile(frame, date, load_col, previous_load) if load_col else None,
             "nearest_previous_normal_days": json.dumps(nearest),
         }
+        report_row.update(previous_values)
         for column in activity_cols:
             report_row[column] = value_or_none(row.get(column))
         rows.append(report_row)

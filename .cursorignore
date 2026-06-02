@@ -1,0 +1,25 @@
+# Heavy/generated data
+.env
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Raw and processed Garmin exports
+data/raw/
+data/processed/*.csv
+
+# Generated outputs: huge and reproducible
+outputs/
+
+# Generated canvas snapshots can be very large; read specific files only when needed
+canvases/*.canvas.tsx
+
+# Frontend dependencies/build artifacts
+web/node_modules/
+web/dist/
+web/build/
+
+# Notebooks/checkpoints
+notebooks/.ipynb_checkpoints/
+**/.ipynb_checkpoints/

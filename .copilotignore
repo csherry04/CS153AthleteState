@@ -1,0 +1,21 @@
+# Secrets and environments
+.env
+.venv/
+
+# Dependency/build/cache folders
+**/node_modules/
+**/dist/
+**/build/
+**/__pycache__/
+**/*.pyc
+
+# Large data and generated artifacts
+data/raw/
+data/processed/*.csv
+outputs/
+
+# Large generated UI snapshots; request specific files explicitly when needed
+canvases/*.canvas.tsx
+
+# Notebook checkpoints
+**/.ipynb_checkpoints/

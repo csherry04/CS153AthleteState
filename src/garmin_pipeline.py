@@ -426,6 +426,140 @@ def concat_frames(frames: list[pd.DataFrame]) -> pd.DataFrame:
     return pd.concat(non_empty, ignore_index=True, sort=False) if non_empty else pd.DataFrame()
 
 
+def activity_sport_family(value: Any) -> str:
+    text = str(value or "").lower()
+    if any(token in text for token in ["run", "running", "trail_running", "track_running"]):
+        return "running"
+    if any(token in text for token in ["cycl", "bik", "road_biking", "mountain_biking"]):
+        return "cycling"
+    if "hik" in text or "walk" in text:
+        return "hiking"
+    if "swim" in text:
+        return "swimming"
+    return "other"
+
+
+def filter_plausible_running_activities(frame: pd.DataFrame) -> pd.DataFrame:
+    """Drop misclassified or corrupt running rows before volume aggregation."""
+    if frame.empty:
+        return frame
+
+    filtered = frame.copy()
+    distance = pd.to_numeric(filtered.get("activity_distance_m"), errors="coerce").fillna(0)
+    duration = pd.to_numeric(filtered.get("activity_duration_seconds"), errors="coerce").fillna(0)
+    aerobic_te = pd.to_numeric(filtered.get("activity_aerobic_training_effect"), errors="coerce")
+    speed = distance / duration.replace(0, pd.NA)
+
+    plausible = pd.Series(True, index=filtered.index)
+    plausible &= (distance <= 0) | (duration > 0)
+    plausible &= (distance <= 0) | (speed <= 6.5)
+    plausible &= (distance <= 2000) | ((speed >= 1.8) & (speed <= 6.5))
+    plausible &= ~((distance > 10000) & (duration < 600))
+    plausible &= ~(aerobic_te.notna() & (distance > 15000) & (aerobic_te < 1.5))
+    plausible &= ~(aerobic_te.notna() & (distance > 25000) & (aerobic_te < 2.0))
+    return filtered.loc[plausible].copy()
+
+
+def load_summarized_running_daily(raw_dir: Path) -> pd.DataFrame:
+    """Daily running totals from Garmin summarizedActivities JSON (canonical per workout).
+
+    Duplicate FIT uploads often inflate processed daily tables; JSON summaries carry
+    stable activityId values and are preferred for running volume when available.
+    """
+    frames: list[pd.DataFrame] = []
+    for path in raw_dir.rglob("*summarizedActivities*.json"):
+        parsed = parse_json(path)
+        activities = parsed.get("activities")
+        if activities is None or activities.empty:
+            continue
+        frames.append(activities)
+    if not frames:
+        return pd.DataFrame(columns=["date", "running_distance_json_m", "running_duration_json_s"])
+
+    all_activities = pd.concat(frames, ignore_index=True)
+    all_activities["date"] = pd.to_datetime(all_activities["date"]).dt.normalize()
+    if "activity_id" in all_activities.columns:
+        all_activities = all_activities.drop_duplicates("activity_id", keep="first")
+    all_activities["sport_family"] = all_activities["activity_type"].map(activity_sport_family)
+    running = all_activities[all_activities["sport_family"] == "running"].copy()
+    running = filter_plausible_running_activities(running)
+    running["activity_distance_m"] = pd.to_numeric(running["activity_distance_m"], errors="coerce").fillna(0)
+    running["activity_duration_seconds"] = pd.to_numeric(running["activity_duration_seconds"], errors="coerce").fillna(0)
+    return running.groupby("date", as_index=False).agg(
+        running_distance_json_m=("activity_distance_m", "sum"),
+        running_duration_json_s=("activity_duration_seconds", "sum"),
+    )
+
+
+def deduplicate_activities(frame: pd.DataFrame) -> pd.DataFrame:
+    """Remove repeated activities that appear in multiple Garmin export sources.
+
+    Garmin often stores the same workout in summarizedActivities JSON and as one
+    or more FIT files. FIT sessions do not reliably expose the Garmin activityId,
+    so we dedupe first by explicit ID and then by a strict same-day activity
+    signature using type, duration, distance, heart rate, and calories.
+    """
+    if frame.empty:
+        return frame
+
+    frame = frame.copy()
+    frame["_has_activity_id"] = frame.get("activity_id", pd.Series(index=frame.index)).notna()
+    frame["_nonnull_activity_fields"] = frame[[col for col in frame.columns if col.startswith("activity_")]].notna().sum(axis=1)
+    source = frame.get("source_file", pd.Series("", index=frame.index)).astype(str)
+    frame["_source_priority"] = 0
+    frame.loc[source.str.contains("summarizedActivities", case=False, na=False), "_source_priority"] = 3
+    frame.loc[source.str.endswith(".tcx", na=False), "_source_priority"] = 2
+    frame.loc[source.str.endswith(".fit", na=False), "_source_priority"] = 1
+    frame = frame.sort_values(
+        ["_has_activity_id", "_source_priority", "_nonnull_activity_fields"],
+        ascending=[False, False, False],
+    )
+
+    if "activity_id" in frame.columns:
+        with_id = frame["activity_id"].notna()
+        frame = pd.concat(
+            [
+                frame[with_id].drop_duplicates("activity_id", keep="first"),
+                frame[~with_id],
+            ],
+            ignore_index=True,
+            sort=False,
+        )
+
+    signature_parts = [frame["date"].astype(str)]
+    if "activity_type" in frame.columns:
+        signature_parts.append(frame["activity_type"].astype("string").fillna(""))
+    for col, decimals in [
+        ("activity_duration_seconds", 0),
+        ("activity_distance_m", 0),
+        ("activity_avg_hr", 0),
+        ("activity_max_hr", 0),
+    ]:
+        if col in frame.columns:
+            signature_parts.append(pd.to_numeric(frame[col], errors="coerce").round(decimals).astype("string").fillna(""))
+
+    if len(signature_parts) > 1:
+        signature = signature_parts[0]
+        for part in signature_parts[1:]:
+            signature = signature + "|" + part
+        has_enough_signal = False
+        for col in ["activity_duration_seconds", "activity_distance_m", "activity_avg_hr", "activity_max_hr"]:
+            if col in frame.columns:
+                has_enough_signal = has_enough_signal | pd.to_numeric(frame[col], errors="coerce").notna()
+        frame["_activity_signature"] = signature.where(has_enough_signal)
+        frame = pd.concat(
+            [
+                frame[frame["_activity_signature"].notna()].drop_duplicates("_activity_signature", keep="first"),
+                frame[frame["_activity_signature"].isna()],
+            ],
+            ignore_index=True,
+            sort=False,
+        )
+
+    helper_cols = [col for col in frame.columns if col.startswith("_")]
+    return frame.drop(columns=helper_cols).sort_values("date").reset_index(drop=True)
+
+
 def aggregate_activities(frame: pd.DataFrame) -> pd.DataFrame:
     if frame.empty:
         return pd.DataFrame()
@@ -435,6 +569,15 @@ def aggregate_activities(frame: pd.DataFrame) -> pd.DataFrame:
             converted = pd.to_numeric(frame[col], errors="coerce")
             if converted.notna().sum() == frame[col].notna().sum():
                 frame[col] = converted
+    frame = deduplicate_activities(frame)
+    frame["sport_family"] = frame["activity_type"].map(activity_sport_family) if "activity_type" in frame.columns else "other"
+    if "activity_distance_m" in frame.columns and "activity_duration_seconds" in frame.columns:
+        distance = pd.to_numeric(frame["activity_distance_m"], errors="coerce")
+        duration = pd.to_numeric(frame["activity_duration_seconds"], errors="coerce")
+        running_mask = frame["sport_family"] == "running"
+        max_distance = duration * 6.5
+        implausible = running_mask & distance.notna() & duration.notna() & (duration > 0) & (distance > max_distance)
+        frame.loc[implausible, "activity_distance_m"] = max_distance[implausible]
     numeric_cols = [
         col
         for col in frame.columns
@@ -460,6 +603,74 @@ def aggregate_activities(frame: pd.DataFrame) -> pd.DataFrame:
     if "activity_type" in frame.columns:
         types = frame.groupby("date")["activity_type"].nunique(dropna=True).rename("activity_type_count").reset_index()
         daily = daily.merge(types, on="date", how="left")
+        sport_sum_cols = [
+            col
+            for col in [
+                "activity_duration_seconds",
+                "activity_moving_duration_seconds",
+                "activity_elapsed_duration_seconds",
+                "activity_distance_m",
+                "activity_calories",
+                "activity_steps",
+                "activity_training_load",
+                "activity_elevation_gain",
+                "activity_elevation_loss",
+            ]
+            if col in frame.columns
+        ]
+        sport_mean_cols = [
+            col
+            for col in [
+                "activity_avg_hr",
+                "activity_max_hr",
+                "activity_avg_speed",
+                "activity_max_speed",
+                "activity_aerobic_training_effect",
+                "activity_anaerobic_training_effect",
+            ]
+            if col in frame.columns
+        ]
+        for family in ["running", "cycling", "hiking", "swimming", "other"]:
+            family_frame = frame[frame["sport_family"] == family]
+            counts = family_frame.groupby("date").size().rename(f"{family}_activity_count").reset_index()
+            if counts.empty:
+                continue
+            daily = daily.merge(counts, on="date", how="left")
+            if sport_sum_cols:
+                sums = family_frame.groupby("date", as_index=False)[sport_sum_cols].sum()
+                sums = sums.rename(columns={col: f"{family}_{col.removeprefix('activity_')}" for col in sport_sum_cols})
+                daily = daily.merge(sums, on="date", how="left")
+            if sport_mean_cols:
+                means = family_frame.groupby("date", as_index=False)[sport_mean_cols].mean()
+                means = means.rename(columns={col: f"{family}_{col.removeprefix('activity_')}" for col in sport_mean_cols})
+                daily = daily.merge(means, on="date", how="left")
+
+        for family in ["running", "cycling", "hiking", "swimming", "other"]:
+            count_col = f"{family}_activity_count"
+            if count_col in daily.columns:
+                daily[count_col] = daily[count_col].fillna(0)
+        zero_series = pd.Series(0, index=daily.index, dtype=float)
+        running_duration = daily.get("running_duration_seconds", zero_series)
+        running_distance = daily.get("running_distance_m", zero_series)
+        hiking_duration = daily.get("hiking_duration_seconds", zero_series)
+        hiking_distance = daily.get("hiking_distance_m", zero_series)
+        cycling_duration = daily.get("cycling_duration_seconds", zero_series)
+        cycling_distance = daily.get("cycling_distance_m", zero_series)
+        daily["impact_weighted_duration_seconds"] = (
+            pd.to_numeric(running_duration, errors="coerce").fillna(0) * 1.0
+            + pd.to_numeric(hiking_duration, errors="coerce").fillna(0) * 0.65
+            + pd.to_numeric(cycling_duration, errors="coerce").fillna(0) * 0.15
+        )
+        daily["impact_weighted_distance_m"] = (
+            pd.to_numeric(running_distance, errors="coerce").fillna(0) * 1.0
+            + pd.to_numeric(hiking_distance, errors="coerce").fillna(0) * 0.6
+            + pd.to_numeric(cycling_distance, errors="coerce").fillna(0) * 0.05
+        )
+        daily["fatigue_weighted_duration_seconds"] = (
+            pd.to_numeric(running_duration, errors="coerce").fillna(0) * 1.0
+            + pd.to_numeric(hiking_duration, errors="coerce").fillna(0) * 0.85
+            + pd.to_numeric(cycling_duration, errors="coerce").fillna(0) * 0.8
+        )
     return daily
 
 

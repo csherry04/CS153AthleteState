@@ -3,3 +3,6 @@ fitparse
 matplotlib
 scikit-learn
 torch
+fastapi
+uvicorn
+httpx

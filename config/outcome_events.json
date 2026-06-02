@@ -1,0 +1,28 @@
+{
+  "events": [
+    {
+      "id": "spring_2024_bone_stress",
+      "label": "Bone stress injury (spring 2024)",
+      "type": "bone_stress_injury",
+      "onset_date": "2024-04-01",
+      "symptom_window_start": "2024-03-01",
+      "notes": "Reported bone injury after sustained running blocks in early 2024. Edit dates if your clinical timeline differs."
+    }
+  ],
+  "reference_periods": [
+    {
+      "id": "feb_mar_2025_ramp",
+      "label": "Feb–Mar 2025 bike-heavy running ramp",
+      "type": "reference_load_block",
+      "start_date": "2025-02-24",
+      "end_date": "2025-03-08",
+      "evaluation_end": "2025-03-08",
+      "notes": "Pseudo-prospective reference — steep running progression during bike-heavy block, not a labeled injury."
+    }
+  ],
+  "evaluation": {
+    "lookback_days": 56,
+    "accumulated_thresholds": [45, 65],
+    "bone_stress_period_threshold": 50
+  }
+}
