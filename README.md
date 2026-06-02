@@ -181,6 +181,10 @@ data/processed/          Processed daily feature snapshots
 - `src/coach_api.py` — live local coaching API
 - `web/src/App.tsx` — local UI routes
 
+## Process and AI Use
+
+This project was built with extensive AI coding assistance. See `AI_USE_DISCLOSURE.md` for the full disclosure of what AI helped with, what decisions and data came from me, and how sources/collaborators are credited.
+
 ## Limitations
 
 - Single-athlete retrospective data.
