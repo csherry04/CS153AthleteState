@@ -58,6 +58,43 @@ def weighted_frontier_score(
     return pd.Series(scores, index=novelty.index)
 
 
+def accumulated_frontier_state(frame: pd.DataFrame) -> pd.Series:
+    """Carry frontier strain forward with recovery/load-sensitive decay.
+
+    Daily frontier strain is an acute learned-state signal. This state converts it into
+    a slower monitoring signal: it jumps quickly when frontier strain spikes and
+    drops only when subsequent days are easy enough to justify decay.
+    """
+    frontier = pd.to_numeric(frame["frontier_strain_score"], errors="coerce")
+    run7_km = pd.to_numeric(frame.get("running_7d_sum_m"), errors="coerce").fillna(0.0) / 1000.0
+    recovery = pd.to_numeric(frame.get("recovery_strain_score"), errors="coerce").fillna(0.0)
+    accumulated_load = pd.to_numeric(frame.get("accumulated_bone_stress_state"), errors="coerce").fillna(0.0)
+
+    state = np.full(len(frame), np.nan, dtype=float)
+    previous = 0.0
+    for idx, value in enumerate(frontier):
+        if np.isnan(value):
+            state[idx] = np.nan
+            continue
+
+        if value > previous:
+            rise_rate = 0.70
+            previous = clamp(previous + rise_rate * (value - previous))
+        else:
+            if run7_km.iloc[idx] >= 80 or recovery.iloc[idx] >= 55 or accumulated_load.iloc[idx] >= 70:
+                decay = 0.97
+            elif run7_km.iloc[idx] <= 35 and recovery.iloc[idx] <= 35 and accumulated_load.iloc[idx] <= 45:
+                decay = 0.88
+            elif run7_km.iloc[idx] <= 50 and recovery.iloc[idx] <= 45 and accumulated_load.iloc[idx] <= 55:
+                decay = 0.91
+            else:
+                decay = 0.94
+            previous = clamp(max(value, previous * decay))
+        state[idx] = previous
+
+    return pd.Series(state, index=frame.index)
+
+
 def load_reference_embedding(
     embeddings: pd.DataFrame,
     outcome_events_path: Path,
@@ -139,13 +176,17 @@ def enrich_frontier_monitoring(
         pred["date"] = pd.to_datetime(pred["date"])
         pred = pred.sort_values("date").drop_duplicates("date", keep="last")
         merged = merged.merge(pred[["date", "actual", "prediction"]], on="date", how="left")
-        error = (pd.to_numeric(merged["actual"], errors="coerce") - pd.to_numeric(merged["prediction"], errors="coerce")).abs()
-        pessimism = pd.to_numeric(merged["prediction"], errors="coerce") - pd.to_numeric(merged["actual"], errors="coerce")
+        actual = pd.to_numeric(merged["actual"], errors="coerce")
+        prediction = pd.to_numeric(merged["prediction"], errors="coerce")
+        error = (actual - prediction).abs()
+        negative_surprise = (prediction - actual).clip(lower=0)
         merged["readiness_forecast_error"] = error
-        merged["readiness_forecast_error_score"] = np.where(error.notna(), normalize_series(error), np.nan)
-        merged["readiness_model_pessimism_score"] = np.where(pessimism.notna(), normalize_series(pessimism.clip(lower=0)), np.nan)
+        merged["readiness_absolute_forecast_error_score"] = np.where(error.notna(), normalize_series(error), np.nan)
+        merged["readiness_forecast_error_score"] = np.where(negative_surprise.notna(), normalize_series(negative_surprise), np.nan)
+        merged["readiness_model_pessimism_score"] = merged["readiness_forecast_error_score"]
     else:
         merged["readiness_forecast_error"] = np.nan
+        merged["readiness_absolute_forecast_error_score"] = np.nan
         merged["readiness_forecast_error_score"] = np.nan
         merged["readiness_model_pessimism_score"] = np.nan
 
@@ -171,10 +212,14 @@ def enrich_frontier_monitoring(
     forecast = pd.to_numeric(merged["readiness_forecast_error_score"], errors="coerce")
     similarity = pd.to_numeric(merged["reference_block_similarity_score"], errors="coerce")
     merged["frontier_strain_score"] = weighted_frontier_score(novelty, forecast, similarity)
+    merged["accumulated_frontier_state"] = accumulated_frontier_state(merged)
+    merged["accumulated_frontier_level"] = merged["accumulated_frontier_state"].map(
+        lambda value: "high" if pd.notna(value) and value >= 70 else "moderate" if pd.notna(value) and value >= 45 else "low" if pd.notna(value) else None
+    )
 
     bone = pd.to_numeric(merged.get("bone_stress_risk_score"), errors="coerce")
-    integrated = (0.65 * bone + 0.35 * merged["frontier_strain_score"]).clip(0.0, 100.0)
-    has_frontier = merged["frontier_strain_score"].notna()
+    integrated = (0.65 * bone + 0.35 * merged["accumulated_frontier_state"]).clip(0.0, 100.0)
+    has_frontier = merged["accumulated_frontier_state"].notna()
     merged["integrated_bone_stress_score"] = np.where(has_frontier & bone.notna(), integrated, bone)
     merged["frontier_strain_level"] = merged["frontier_strain_score"].map(
         lambda value: "high" if pd.notna(value) and value >= 70 else "moderate" if pd.notna(value) and value >= 45 else "low" if pd.notna(value) else None

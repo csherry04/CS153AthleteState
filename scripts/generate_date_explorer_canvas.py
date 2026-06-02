@@ -25,8 +25,8 @@ DISPLAY_COLUMNS = [
     ("literature_bone_stress_level", "literatureLevel"),
     ("personalized_bone_stress_score", "personalizedScore"),
     ("personalized_bone_stress_level", "personalizedLevel"),
-    ("frontier_strain_score", "frontierScore"),
-    ("frontier_strain_level", "frontierLevel"),
+    ("accumulated_frontier_state", "frontierScore"),
+    ("accumulated_frontier_level", "frontierLevel"),
     ("integrated_bone_stress_score", "integratedScore"),
     ("accumulated_bone_stress_state", "accumulatedState"),
     ("accumulated_bone_stress_level", "accumulatedLevel"),
@@ -41,6 +41,7 @@ DISPLAY_COLUMNS = [
     ("embedding_novelty_score", "embeddingNovelty"),
     ("contrastive_novelty_score", "contrastiveNovelty"),
     ("readiness_forecast_error_score", "forecastError"),
+    ("readiness_absolute_forecast_error_score", "absoluteForecastError"),
     ("reference_archetype_label", "archetype"),
     ("embedding_neighbor_summary", "neighbors"),
     ("frontier_attribution_summary", "attribution"),
@@ -61,7 +62,7 @@ STRING_FIELDS = {
     "bone_stress_risk_reason",
     "literature_bone_stress_level",
     "personalized_bone_stress_level",
-    "frontier_strain_level",
+    "accumulated_frontier_level",
     "accumulated_bone_stress_level",
     "running_acwr_zone",
     "reference_archetype_label",
@@ -104,7 +105,7 @@ def build_insights(row: pd.Series, period_label: str | None) -> list[str]:
     tier = str(row.get("operational_alert_tier") or "clear")
     agreement = str(row.get("monitoring_signal_agreement") or "")
     lit = str(row.get("literature_bone_stress_level") or "")
-    frontier = str(row.get("frontier_strain_level") or "")
+    frontier = str(row.get("accumulated_frontier_level") or "")
 
     if acc >= 65 and run7 < 95:
         insights.append(
@@ -182,7 +183,7 @@ def build_payload(
 
     anchors = [
         {"label": "Latest day", "date": default_date},
-        {"label": "Spring 2024 all-agree", "date": "2024-02-10"},
+        {"label": "Spring 2024 all-agree", "date": "2024-02-09"},
         {"label": "Spring 2024 symptom window", "date": "2024-03-15"},
         {"label": "Feb–Mar 2025 ramp", "date": "2025-03-01"},
         {"label": "Peak 140+ km week sample", "date": None},
@@ -250,6 +251,13 @@ function levelTone(level: string | null | undefined): 'success' | 'warning' | 'd
   return 'info';
 }
 
+function scoreLevel(score: number | null | undefined): 'low' | 'moderate' | 'high' | '—' {
+  if (score === null || score === undefined || Number.isNaN(Number(score))) return '—';
+  if (Number(score) >= 70) return 'high';
+  if (Number(score) >= 45) return 'moderate';
+  return 'low';
+}
+
 function scoreRows(day: DayRecord | undefined) {
   if (!day) return [];
   return [
@@ -257,7 +265,7 @@ function scoreRows(day: DayRecord | undefined) {
     ['Literature', fmt(day.literatureScore), day.literatureLevel ?? '—'],
     ['Personalized', fmt(day.personalizedScore), day.personalizedLevel ?? '—'],
     ['Frontier', fmt(day.frontierScore), day.frontierLevel ?? '—'],
-    ['Integrated', fmt(day.integratedScore), '—'],
+    ['Integrated', fmt(day.integratedScore), scoreLevel(day.integratedScore)],
     ['Recovery risk', fmt(day.recoveryRiskScore), day.recoveryRiskLevel ?? '—'],
   ];
 }
@@ -277,7 +285,7 @@ function loadRows(day: DayRecord | undefined) {
     ['Foster monotony', fmt(day.fosterMonotony)],
     ['Embedding novelty', fmt(day.embeddingNovelty)],
     ['Contrastive novelty', fmt(day.contrastiveNovelty)],
-    ['Forecast error', fmt(day.forecastError)],
+    ['Negative readiness surprise', fmt(day.forecastError)],
   ];
 }
 
@@ -341,6 +349,10 @@ function DayPanel({ day, title }: { day: DayRecord | undefined; title: string })
         <Stat value={fmt(day.accumulatedState)} label="Accumulated load" tone={levelTone(day.accumulatedLevel)} />
         <Stat value={fmt(day.combinedScore)} label="Combined score" tone={levelTone(day.combinedLevel)} />
       </Grid>
+      <Text tone="secondary" size="small">
+        Accumulated load is a slow-decay running strain state: recent 7-day/28-day load, ramp rate, intensity, workouts,
+        and monotony carry forward day to day, so it can remain high after this week’s mileage drops.
+      </Text>
       <H3>Insights</H3>
       <Stack gap={8}>
         {day.insights.map((insight) => (
@@ -542,6 +554,17 @@ export default function DateExplorer() {
     return template.replace("__PAYLOAD__", data)
 
 
+def replace_payload_in_existing_canvas(canvas: str, payload: dict[str, object]) -> str | None:
+    """Update generated data while preserving hand-polished canvas UI."""
+    marker = "type DayRecord"
+    start = canvas.find("const payload = ")
+    end = canvas.find(marker, start)
+    if start == -1 or end == -1:
+        return None
+    data = json.dumps(payload, separators=(",", ":"))
+    return f"{canvas[:start]}const payload = {data} as const;\n\n{canvas[end:]}"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate searchable date explorer canvas.")
     parser.add_argument("--bone-scores", type=Path, default=Path("outputs/analysis/athlete_bone_stress_scores.csv"))
@@ -564,7 +587,12 @@ def main() -> None:
     args.output_json.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     args.canvas_dir.mkdir(parents=True, exist_ok=True)
     canvas_path = args.canvas_dir / "date-explorer.canvas.tsx"
-    canvas_path.write_text(render_canvas(payload), encoding="utf-8")
+    if canvas_path.exists():
+        existing = canvas_path.read_text(encoding="utf-8")
+        canvas = replace_payload_in_existing_canvas(existing, payload) or render_canvas(payload)
+    else:
+        canvas = render_canvas(payload)
+    canvas_path.write_text(canvas, encoding="utf-8")
     print(f"Wrote date explorer ({payload['dayCount']} days) to {canvas_path}")
 
 

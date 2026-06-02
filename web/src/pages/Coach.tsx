@@ -62,7 +62,7 @@ export default function Coach() {
         ...prev,
         {
           role: 'assistant',
-          content: `Error: ${(error as Error).message}. Ensure the API server is running and OPENROUTER_API_KEY is set.`,
+          content: `Error: ${(error as Error).message}. Ensure the API server is running and an API key is configured.`,
         },
       ]);
     } finally {
@@ -93,8 +93,7 @@ export default function Coach() {
     <Stack gap={20}>
       <H1>Coach (live)</H1>
       <Text tone="secondary" size="small">
-        This panel calls your local coaching API (FastAPI) which then uses OpenRouter tool-calling to ground responses
-        in your monitoring data.
+        Ask questions about your monitoring data. Answers are grounded in local scores and retrieved context.
       </Text>
 
       <div className="chat-shell">
@@ -102,7 +101,7 @@ export default function Coach() {
           <div className="chat-header">
             <div>
               <Text size="small" tone="secondary">Grounded coaching</Text>
-              <h2>Frontier Coach</h2>
+              <h2>Athlete Coach</h2>
             </div>
             <Text size="small" tone="secondary">API status: {loading ? 'Working' : 'Ready'}</Text>
           </div>

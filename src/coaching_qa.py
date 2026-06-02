@@ -1,4 +1,4 @@
-"""Grounded coaching Q&A via OpenRouter for flagged monitoring days."""
+"""Grounded coaching Q&A for flagged monitoring days."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ from typing import Any
 
 import pandas as pd
 
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-DEFAULT_MODEL = "anthropic/claude-3.5-haiku"
+OPENAI_URL = "https://api.openai.com/v1/chat/completions"
+DEFAULT_MODEL = "gpt-4.1-mini"
 
 
 def should_generate_qa(row: pd.Series) -> bool:
@@ -32,7 +32,7 @@ def build_context_pack(
         "monitoring_signal_agreement": row.get("monitoring_signal_agreement"),
         "literature_score": row.get("literature_bone_stress_score"),
         "personalized_score": row.get("personalized_bone_stress_score"),
-        "frontier_score": row.get("frontier_strain_score"),
+        "frontier_score": row.get("accumulated_frontier_state"),
         "combined_score": row.get("bone_stress_risk_score"),
         "dominant_reason": row.get("bone_stress_risk_reason"),
         "run7_km": round(float(row.get("running_7d_sum_m") or 0) / 1000.0, 1),
@@ -68,15 +68,15 @@ def build_prompt(context: dict[str, Any]) -> list[dict[str, str]]:
     ]
 
 
-def call_openrouter(
+def call_openai(
     messages: list[dict[str, str]],
     model: str = DEFAULT_MODEL,
     api_key: str | None = None,
     timeout: int = 60,
 ) -> str:
-    key = api_key or os.environ.get("OPENROUTER_API_KEY")
+    key = api_key or os.environ.get("OPENAI_API_KEY")
     if not key:
-        raise RuntimeError("OPENROUTER_API_KEY is not set.")
+        raise RuntimeError("OPENAI_API_KEY is not set.")
 
     payload = json.dumps(
         {
@@ -87,13 +87,11 @@ def call_openrouter(
         }
     ).encode("utf-8")
     request = urllib.request.Request(
-        OPENROUTER_URL,
+        OPENAI_URL,
         data=payload,
         headers={
             "Authorization": f"Bearer {key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "https://github.com/athlete-state-model",
-            "X-Title": "Athlete State Model Coaching QA",
         },
         method="POST",
     )
@@ -102,11 +100,11 @@ def call_openrouter(
             body = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"OpenRouter request failed ({exc.code}): {detail}") from exc
+        raise RuntimeError(f"API request failed ({exc.code}): {detail}") from exc
 
     choices = body.get("choices") or []
     if not choices:
-        raise RuntimeError("OpenRouter returned no choices.")
+        raise RuntimeError("API returned no choices.")
     return str(choices[0]["message"]["content"]).strip()
 
 
@@ -153,7 +151,7 @@ def generate_coaching_entries(
         )
         messages = build_prompt(context)
         try:
-            answer = call_openrouter(messages, model=model, api_key=api_key)
+            answer = call_openai(messages, model=model, api_key=api_key)
             status = "ok"
             error = None
         except RuntimeError as exc:
@@ -172,6 +170,6 @@ def generate_coaching_entries(
                 "error": error,
             }
         )
-        if status == "error" and "OPENROUTER_API_KEY" in (error or ""):
+        if status == "error" and "OPENAI_API_KEY" in (error or ""):
             break
     return entries

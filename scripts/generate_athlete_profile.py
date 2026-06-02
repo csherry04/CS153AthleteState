@@ -111,7 +111,7 @@ def build_profile(
     big_week_high_rate = float((big_weeks["bone_stress_risk_level"] == "high").mean()) if len(big_weeks) else 0.0
 
     frontier_strain_no_load = bone[
-        (bone["frontier_strain_level"] == "high") & (bone["literature_bone_stress_level"] != "high")
+        (bone["accumulated_frontier_level"] == "high") & (bone["literature_bone_stress_level"] != "high")
     ]
 
     yearly = (
@@ -202,7 +202,7 @@ def build_profile(
         {
             "priority": "medium",
             "action": "When frontier is high but literature is low, check readiness/HRV before adding intensity",
-            "why": "These are days where the TCN sees atypical multivariate state — forecast error or embedding drift — not just km.",
+            "why": "These are days where the TCN sees atypical multivariate state — negative readiness surprise or embedding drift — not just km.",
         },
         {
             "priority": "medium",
@@ -241,9 +241,9 @@ def build_profile(
             "track": "Frontier",
             "reads_as": "Learned multivariate strain",
             "your_pattern": (
-                f"{int(bone['frontier_strain_score'].notna().sum())} scored days; "
-                f"{int((bone['frontier_strain_level'] == 'high').sum())} high. "
-                "Peaks when embedding novelty or readiness forecast error spike — often around labeled spring 2024 window and selected 2024–2025 dates."
+                f"{int(bone['accumulated_frontier_state'].notna().sum())} scored days; "
+                f"{int((bone['accumulated_frontier_level'] == 'high').sum())} high. "
+                "Peaks when embedding novelty, negative readiness surprise, or reference-block similarity spike — often around labeled spring 2024 window and selected 2024–2025 dates."
             ),
         },
     ]
@@ -446,6 +446,10 @@ function ActiveSection({{ section }}: {{ section: SectionId }}) {{
               <Stat value={{String(profile.latestOperational.run7Km)}} label="7-day run km" tone="info" />
               <Stat value={{String(profile.latestOperational.accumulatedState)}} label="Accumulated load state" tone="warning" />
             </Grid>
+            <Text tone="secondary" size="small">
+              Accumulated load state is a slow-decay running strain score. It blends recent 7-day/28-day load, ramp rate,
+              intensity, workouts, and monotony, then carries that strain forward so risk can linger after mileage eases.
+            </Text>
             <Divider />
             <Text>{{profile.latestOperational.recommendation}}</Text>
             {{profile.latestOperational.counterfactual ? (
@@ -599,6 +603,17 @@ export default function AthleteProfile() {{
 """
 
 
+def replace_profile_in_existing_canvas(canvas: str, profile: dict[str, object]) -> str | None:
+    """Update generated data while preserving hand-polished canvas UI."""
+    marker = "const sections"
+    start = canvas.find("const profile = ")
+    end = canvas.find(marker, start)
+    if start == -1 or end == -1:
+        return None
+    data = json.dumps(profile, indent=2)
+    return f"{canvas[:start]}const profile = {data} as const;\n\n{canvas[end:]}"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate interpretable athlete profile outputs.")
     parser.add_argument("--bone-scores", type=Path, default=Path("outputs/analysis/athlete_bone_stress_scores.csv"))
@@ -625,7 +640,12 @@ def main() -> None:
     (args.output_dir / "athlete_profile.json").write_text(json.dumps(profile, indent=2), encoding="utf-8")
     write_markdown(profile, args.output_dir / "athlete_profile.md")
     args.canvas_path.parent.mkdir(parents=True, exist_ok=True)
-    args.canvas_path.write_text(render_canvas(profile), encoding="utf-8")
+    if args.canvas_path.exists():
+        existing = args.canvas_path.read_text(encoding="utf-8")
+        canvas = replace_profile_in_existing_canvas(existing, profile) or render_canvas(profile)
+    else:
+        canvas = render_canvas(profile)
+    args.canvas_path.write_text(canvas, encoding="utf-8")
     print(f"Wrote profile to {args.output_dir} and canvas to {args.canvas_path}")
 
 

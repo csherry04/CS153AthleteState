@@ -9,7 +9,7 @@ def operational_alert_tier(row: pd.Series) -> str:
     """Map track levels and agreement to an operational tier."""
     lit = str(row.get("literature_bone_stress_level", "low"))
     pers = str(row.get("personalized_bone_stress_level", "low"))
-    frontier = row.get("frontier_strain_level")
+    frontier = row.get("accumulated_frontier_level")
     agreement = str(row.get("monitoring_signal_agreement", ""))
 
     if agreement == "all_agree" and "high" in {lit, pers, str(frontier)}:
@@ -53,7 +53,7 @@ def counterfactual_hint(row: pd.Series) -> str:
         )
     if "hard running session" in reason:
         return "Replace the next hard run with easy volume or cross-training; intensity is contributing more than distance."
-    if row.get("frontier_strain_level") == "high" and row.get("literature_bone_stress_level") != "high":
+    if row.get("accumulated_frontier_level") == "high" and row.get("literature_bone_stress_level") != "high":
         return "Learned state is elevated without extreme load — prioritize sleep, HRV, and readiness before adding intensity."
     if run7_km > 0:
         return f"Moderate 7-day running ({run7_km:.0f} km); avoid stacking hard sessions this week."

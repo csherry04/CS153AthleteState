@@ -57,6 +57,7 @@ def evaluate_target(
 ) -> dict[str, object]:
     end = pd.Timestamp(target.get("evaluation_end") or target.get("onset_date") or target["end_date"])
     start = pd.Timestamp(target.get("symptom_window_start") or target.get("start_date") or end - pd.Timedelta(days=lookback_days))
+    lookback_start = end - pd.Timedelta(days=lookback_days)
     window = scores[(scores["date"] >= end - pd.Timedelta(days=lookback_days)) & (scores["date"] < end)]
     pre_symptom = scores[(scores["date"] >= start) & (scores["date"] < end)]
 
@@ -65,31 +66,33 @@ def evaluate_target(
         "label": target.get("label", target["id"]),
         "evaluation_end": end.date().isoformat(),
         "symptom_window_start": start.date().isoformat(),
+        "lookback_window_start": lookback_start.date().isoformat(),
+        "lookback_window_end": (end - pd.Timedelta(days=1)).date().isoformat(),
         "lookback_days": lookback_days,
         "days_in_window": int(len(window)),
         "counts": {
             "literature_high": int((window["literature_bone_stress_level"] == "high").sum()) if "literature_bone_stress_level" in window else 0,
             "personalized_high": int((window["personalized_bone_stress_level"] == "high").sum()) if "personalized_bone_stress_level" in window else 0,
-            "frontier_high": int((window["frontier_strain_level"] == "high").sum()) if "frontier_strain_level" in window else 0,
+            "frontier_high": int((window["accumulated_frontier_level"] == "high").sum()) if "accumulated_frontier_level" in window else 0,
             "all_agree": int((window["monitoring_signal_agreement"] == "all_agree").sum()) if "monitoring_signal_agreement" in window else 0,
             "mixed_signals": int((window["monitoring_signal_agreement"] == "mixed_signals").sum()) if "monitoring_signal_agreement" in window else 0,
             "frontier_high_literature_not": int(
-                ((window["frontier_strain_level"] == "high") & (window["literature_bone_stress_level"] != "high")).sum()
+                ((window["accumulated_frontier_level"] == "high") & (window["literature_bone_stress_level"] != "high")).sum()
             )
-            if "frontier_strain_level" in window
+            if "accumulated_frontier_level" in window
             else 0,
         },
         "first_signals": {
             "literature_high": first_signal_day(window, "literature_bone_stress_level", "high", end),
             "personalized_high": first_signal_day(window, "personalized_bone_stress_level", "high", end),
-            "frontier_high": first_signal_day(window, "frontier_strain_level", "high", end),
+            "frontier_high": first_signal_day(window, "accumulated_frontier_level", "high", end),
             "all_agree": first_signal_day(window, "monitoring_signal_agreement", "all_agree", end),
             "mixed_signals": first_signal_day(window, "monitoring_signal_agreement", "mixed_signals", end),
-            "frontier_score_70": first_threshold_day(window, "frontier_strain_score", 70.0, end),
+            "frontier_state_70": first_threshold_day(window, "accumulated_frontier_state", 70.0, end),
             "integrated_score_70": first_threshold_day(window, "integrated_bone_stress_score", 70.0, end),
         },
         "peak_in_window": {
-            "frontier_strain_score": float(window["frontier_strain_score"].max()) if window["frontier_strain_score"].notna().any() else None,
+            "accumulated_frontier_state": float(window["accumulated_frontier_state"].max()) if window["accumulated_frontier_state"].notna().any() else None,
             "literature_bone_stress_score": float(window["literature_bone_stress_score"].max()),
             "personalized_bone_stress_score": float(window["personalized_bone_stress_score"].max()),
             "bone_stress_risk_score": float(window["bone_stress_risk_score"].max()),
@@ -112,8 +115,8 @@ def build_markdown(report: dict) -> str:
                 f"## {result['label']}",
                 "",
                 f"- Evaluation end: **{result['evaluation_end']}**",
-                f"- Symptom / reference window start: **{result['symptom_window_start']}**",
-                f"- Lookback: {result['lookback_days']} days",
+                f"- Reference window: **{result['symptom_window_start']}** to **{result['evaluation_end']}**",
+                f"- Counted lookback: **{result['lookback_window_start']}** to **{result['lookback_window_end']}** ({result['days_in_window']} days)",
                 "",
                 "### Signal counts in lookback",
                 "",

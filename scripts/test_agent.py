@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test the coaching agent with OpenRouter."""
+"""Test the coaching agent tools."""
 
 import os
 import sys
@@ -12,12 +12,12 @@ if str(REPO_ROOT) not in sys.path:
 
 
 def main():
-    api_key = os.getenv("OPENROUTER_API_KEY")
+    api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        print("✗ OPENROUTER_API_KEY is not set")
+        print("✗ OPENAI_API_KEY is not set")
         sys.exit(1)
 
-    os.environ["OPENROUTER_API_KEY"] = api_key
+    os.environ["OPENAI_API_KEY"] = api_key
 
     from src.agent_tools import CoachingAgentTools
 
@@ -42,7 +42,7 @@ def main():
 
     print("✓ All tool tests passed!")
     print("\nNow try the interactive agent:")
-    print("  export OPENROUTER_API_KEY='sk-or-...'\n  python scripts/run_coaching_agent.py")
+    print("  export OPENAI_API_KEY='your_key_here'\n  python scripts/run_coaching_agent.py")
 
 
 if __name__ == "__main__":

@@ -45,34 +45,34 @@ const bonePeriodRows = [
 ];
 
 const boneDayRows = [
-  ['2024-04-21', '95', '81', '88', '65', 'sustained high running volume', 'literature_personalized_agree_frontier_differs'],
-  ['2024-01-07', '95', '70', '81', '88', 'sustained high running volume', 'all_agree'],
-  ['2023-07-16', '95', '77', '84', '28', 'sustained high running volume', 'literature_personalized_agree_frontier_differs'],
-  ['2023-08-15', '94', '81', '86', '31', 'sustained high running volume', 'literature_personalized_agree_frontier_differs'],
-  ['2020-03-29', '94', '77', '89', '65', 'sustained high running volume', 'literature_personalized_agree_frontier_differs'],
-  ['2023-08-20', '94', '77', '83', '46', 'sustained high running volume', 'literature_personalized_agree_frontier_differs'],
+  ['2024-04-21', '95', '81', '88', '61', 'sustained high running volume', 'literature_personalized_agree_frontier_differs'],
+  ['2024-01-07', '95', '70', '81', '77', 'sustained high running volume', 'all_agree'],
+  ['2023-07-16', '95', '77', '84', '34', 'sustained high running volume', 'literature_personalized_agree_frontier_differs'],
+  ['2023-08-15', '94', '81', '86', '60', 'sustained high running volume', 'literature_personalized_agree_frontier_differs'],
+  ['2020-03-29', '94', '77', '89', '76', 'sustained high running volume', 'all_agree'],
+  ['2023-08-20', '94', '77', '83', '56', 'sustained high running volume', 'literature_personalized_agree_frontier_differs'],
 ];
 
 const febMar2025Rows = [
-  ['2025-03-06', '60', '74', '66', 'literature_frontier_agree', 'sustained high running volume'],
-  ['2025-03-08', '47', '66', '57', 'all_agree', 'sustained high running volume'],
-  ['2025-03-07', '39', '58', '56', 'personalized_frontier_agree', 'running volume progression'],
-  ['2025-03-04', '51', '69', '51', 'all_agree', 'running volume progression'],
+  ['2025-03-06', '60', '74', '62', 'literature_frontier_agree', 'sustained high running volume'],
+  ['2025-03-05', '60', '75', '51', 'literature_frontier_agree', 'hard running session'],
+  ['2025-03-02', '63', '78', '44', 'mixed_signals', 'running volume progression'],
+  ['2025-03-07', '39', '58', '60', 'personalized_frontier_agree', 'running volume progression'],
 ];
 
 const spring2024Rows = [
-  ['2024-05-07', '60', '41', '77', 'mixed_signals', 'hard running session'],
-  ['2024-03-23', '70', '71', '79', 'all_agree', 'sustained high running volume'],
-  ['2024-03-21', '81', '80', '77', 'all_agree', 'sustained high running volume'],
-  ['2024-03-25', '77', '72', '72', 'all_agree', 'sustained high running volume'],
+  ['2024-04-21', '81', '88', '61', 'literature_personalized_agree_frontier_differs', 'sustained high running volume'],
+  ['2024-03-10', '81', '85', '57', 'literature_personalized_agree_frontier_differs', 'sustained high running volume'],
+  ['2024-03-24', '77', '75', '70', 'all_agree', 'sustained high running volume'],
+  ['2024-03-26', '77', '78', '66', 'literature_personalized_agree_frontier_differs', 'sustained high running volume'],
 ];
 
 const frontierDisagreeRows = [
-  ['2024-05-07', '60', '41', '77', 'mixed_signals', 'hard running session'],
-  ['2025-09-27', '8', '20', '88', 'literature_personalized_agree_frontier_differs', 'low running bone-stress context'],
-  ['2025-08-10', '8', '19', '90', 'literature_personalized_agree_frontier_differs', 'low running bone-stress context'],
-  ['2026-03-15', '60', '63', '82', 'literature_personalized_agree_frontier_differs', 'hard running session'],
-  ['2024-07-16', '63', '35', '75', 'mixed_signals', 'running volume progression'],
+  ['2026-03-16', '60', '64', '73', 'literature_personalized_agree_frontier_differs', 'running load spike'],
+  ['2026-03-15', '60', '63', '77', 'literature_personalized_agree_frontier_differs', 'hard running session'],
+  ['2026-03-12', '60', '58', '73', 'literature_personalized_agree_frontier_differs', 'hard running session'],
+  ['2026-01-19', '60', '77', '73', 'personalized_frontier_agree', 'sustained high running volume'],
+  ['2026-01-18', '60', '76', '75', 'personalized_frontier_agree', 'hard running session'],
 ];
 
 const recoveryPeriodRows = [
@@ -100,16 +100,16 @@ const scoreGuideRows = [
 const trackRows = [
   ['Literature', 'Gabbett ACWR zones, Edwards speed bands, Foster monotony/strain', '2,820 days', 'Defensible objective thresholds — no percentiles'],
   ['Personalized', 'Percentile scoring vs your running history', '2,820 days', 'Individualized progression and spikes'],
-  ['Frontier', 'TCN embedding novelty, readiness forecast error, reference-block similarity', '2,792 days (28d warm-up)', 'Multivariate learned-state strain'],
+  ['Frontier', 'Accumulated TCN state: embedding novelty + negative readiness surprise + reference similarity with recovery/load-sensitive carryover', '2,792 days (28d warm-up)', 'Cumulative learned-state strain'],
   ['Recovery risk', 'Readiness, HRV, sleep + all sports', '795 days', 'Autonomic recovery lagging workload'],
 ];
 
 const agreementRows = [
-  ['literature_personalized_agree_frontier_differs', '1,402', 'Lit + pers agree, frontier differs'],
-  ['all_agree', '606', 'All three tracks same level'],
-  ['mixed_signals', '349', 'Literature and personalized disagree'],
-  ['literature_frontier_agree', '261', 'Objective load + learned state align'],
-  ['personalized_frontier_agree', '192', 'Individual spike + learned state align'],
+  ['all_agree', '1,027', 'All three tracks same level'],
+  ['literature_personalized_agree_frontier_differs', '981', 'Lit + pers agree, frontier differs'],
+  ['literature_frontier_agree', '369', 'Objective load + learned state align'],
+  ['personalized_frontier_agree', '280', 'Individual spike + learned state align'],
+  ['mixed_signals', '153', 'Literature and personalized disagree'],
   ['literature_personalized_agree', '10', 'Lit + pers agree, no frontier coverage'],
 ];
 
@@ -141,8 +141,8 @@ function ActiveSection({ section }: { section: SectionId }) {
             ['date-explorer.canvas.tsx', 'Search any day, compare dates, full stats + insights', 'generate_date_explorer_canvas.py'],
             ['daily-briefing.canvas.tsx', 'Today’s alert tier, three tracks, 7-day trend, counterfactual', 'generate_daily_briefing.py'],
             ['bone-stress-periods.canvas.tsx', 'Detected load blocks, agreement per period, active block', 'generate_bone_stress_periods_canvas.py'],
-            ['coaching-qa.canvas.tsx', 'Grounded OpenRouter Q&A for flagged days', 'generate_coaching_qa.py'],
-            ['frontier-outcomes.canvas.tsx', 'Did frontier/rules flag before spring 2024 and Feb–Mar 2025?', 'evaluate_frontier_outcomes.py'],
+            ['coaching-qa.canvas.tsx', 'Grounded Q&A for flagged days', 'generate_coaching_qa.py'],
+            ['frontier-outcomes.canvas.tsx', 'Did frontier/rules flag before spring 2024?', 'evaluate_frontier_outcomes.py'],
           ]}
           striped
         />
@@ -172,7 +172,7 @@ function ActiveSection({ section }: { section: SectionId }) {
         <Callout tone="info" title="What this system does">
           Scores every day from Garmin data using two philosophies side by side: literature-backed objective thresholds
           (Gabbett, Edwards, Foster) and personalized percentiles vs your history. Where the TCN has coverage, a third
-          frontier track adds embedding novelty and readiness forecast error. For a plain-language read of your
+          frontier track adds embedding novelty and negative readiness surprise. For a plain-language read of your
           strengths, risk patterns, and what to adjust, open the Athlete profile canvas.
         </Callout>
         <Grid columns={4} gap={12}>
@@ -195,8 +195,8 @@ function ActiveSection({ section }: { section: SectionId }) {
             ['Literature rule score', 'Would a standard sports-science rule flag this running pattern?', 'Running workload ratio, speed/intensity bands, monotony, strain, and progression.', 'Use this as the most objective/interpretable check. If high, the load pattern is risky even before considering your personal baseline.'],
             ['Personal history score', 'Is this unusual for this athlete specifically?', 'Percentiles against your own recent and historical running volume, load, intensity, and progression.', 'Use this to catch “big for you” days. It can be high even when literature rules are only moderate.'],
             ['Rules + personal load risk', 'Do the objective rules and personal baseline together suggest bone-stress load?', 'Blend of literature rule score and personal history score, plus spike/progression logic.', 'Use this to understand the plain running-load reason. This is the best explanation of mileage/load-driven risk.'],
-            ['Model-only frontier strain', 'Does the learned model think the whole athlete state looks unusual or concerning?', 'Embedding novelty, readiness forecast error, and similarity to reference risky blocks.', 'Use this to see what makes the project unique. It may flag hidden strain, but it can also disagree because it is looking beyond simple mileage.'],
-            ['Frontier-integrated risk', 'What is the best headline score combining load logic with the frontier model?', '65% Rules + personal load risk, 35% Model-only frontier strain when model coverage exists.', 'Use this first on pages like Date Explorer. Then inspect the component scores to understand whether the warning came from load, the model, or both.'],
+            ['Frontier state score', 'Does learned-state strain appear to be accumulating?', 'Embedding novelty, negative readiness surprise, and reference similarity with recovery/load-sensitive carryover.', 'Use this as the model-based frontier score. It is cumulative, so one quiet day does not erase a prior learned-state spike.'],
+            ['Frontier-integrated risk', 'What is the best headline score combining load logic with the frontier model?', '65% Rules + personal load risk, 35% Frontier state score when model coverage exists.', 'Use this first on pages like Date Explorer. Then inspect the component scores to understand whether the warning came from load, the model, or both.'],
             ['Recovery risk', 'Is recovery/autonomic state poor relative to recent workload?', 'Readiness, HRV, sleep/body battery, accumulated insufficient rest, and running while under-recovered.', 'Use this separately from bone-stress load. It explains whether the body looks under-recovered even if running load is not extreme.'],
           ]}
           striped
@@ -228,7 +228,7 @@ function ActiveSection({ section }: { section: SectionId }) {
           headers={['Pattern', 'Likely meaning', 'What to check']}
           rows={[
             ['Rules + personal high, frontier low', 'Running load is objectively/personally high, but the learned state does not look unusual.', 'Still manage load; the model is not a free pass. Check recent mileage and hard-session stacking.'],
-            ['Frontier high, rules + personal low', 'The model sees unusual state, poor predictability, or similarity to risky blocks without a classic mileage spike.', 'Check readiness, HRV, sleep, cross-training fatigue, illness/stress, and whether the day resembles prior risky periods.'],
+            ['Frontier high, rules + personal low', 'Accumulated learned-state strain is high without a classic mileage spike.', 'Check readiness, HRV, sleep, cross-training fatigue, illness/stress, and whether the day resembles prior risky periods.'],
             ['Personal high, literature low', 'This is big relative to your own history but not objectively extreme.', 'Progression may be too sharp for you personally. Consider easing volume or intensity.'],
             ['Literature high, personal low', 'The day violates general load rules, but this athlete has handled similar loads before.', 'Still respect the objective warning, especially if recovery is poor or symptoms exist.'],
             ['All agree high', 'The strongest signal: objective load, personal history, and/or learned state are aligned.', 'Treat as a real training-management warning. Reduce intensity/volume and prioritize recovery.'],
@@ -351,29 +351,23 @@ function ActiveSection({ section }: { section: SectionId }) {
         <Grid columns={3} gap={12}>
           <Stat value="163" label="Lit high, personalized not" tone="warning" />
           <Stat value="305" label="Personalized high, lit not" tone="warning" />
-          <Stat value="201" label="Frontier high, lit not" tone="danger" />
+          <Stat value="172" label="Frontier high, lit not" tone="danger" />
         </Grid>
         <Text tone="secondary" size="small">
-          Frontier covers 2,792 / 2,820 days (first 28 days need a lookback window). Readiness forecast error only exists
-          on 795 days where Garmin readiness is labeled. Negative embedding anomaly = low novelty (0), not negative strain.
+          Frontier covers 2,792 / 2,820 days (first 28 days need a lookback window). Negative readiness surprise only exists
+          on days where Garmin readiness predictions and actuals are both available. Negative embedding anomaly = low novelty (0), not negative strain.
           Tag `literature_personalized_agree_frontier_differs` means load tracks agree but frontier does not.
         </Text>
+        <Callout tone="warning" title="What frontier means now">
+          The displayed frontier score is the accumulated frontier state, not raw daily model surprise. It rises with
+          unusual learned-state strain and decays gradually based on recovery/load context.
+        </Callout>
         <H2>Agreement tags (full history)</H2>
         <Text tone="secondary" size="small">Source: monitoring_signal_summary.json</Text>
         <Table headers={['Tag', 'Days', 'Meaning']} rows={agreementRows} striped />
-        <H3>Feb–Mar 2025 (bike-heavy ramp)</H3>
-        <Text tone="secondary" size="small">
-          Literature mostly moderate; personalized flags progression; frontier is moderate-high but no longer the peak signal on Mar 6.
-        </Text>
-        <Table
-          headers={['Date', 'Lit', 'Pers', 'Fr', 'Agreement', 'Reason']}
-          rows={febMar2025Rows}
-          columnAlign={['left', 'right', 'right', 'right', 'left', 'left']}
-          striped
-        />
         <H3>Spring 2024 (labeled BSI window — validation only)</H3>
         <Text tone="secondary" size="small">
-          Mar 15 &amp; 23: all tracks agree. May 7: frontier ~77 while literature ~60 — mixed_signals
+          Mar 24: all tracks high; accumulated frontier state stays elevated across the March load block.
         </Text>
         <Table
           headers={['Date', 'Lit', 'Pers', 'Fr', 'Agreement', 'Reason']}
@@ -383,7 +377,7 @@ function ActiveSection({ section }: { section: SectionId }) {
         />
         <H3>Frontier high, literature not (recent examples)</H3>
         <Text tone="secondary" size="small">
-          Source: latest athlete_bone_stress_scores.csv · forecast error / embedding novelty without objective load spike
+          Source: latest athlete_bone_stress_scores.csv · negative readiness surprise / embedding novelty without objective load spike
         </Text>
         <Table
           headers={['Date', 'Lit', 'Pers', 'Fr', 'Agreement', 'Reason']}

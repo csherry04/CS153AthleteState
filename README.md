@@ -12,7 +12,7 @@ The system combines four layers:
 
 1. **Literature rule score** — interpretable sports-science-style load rules such as workload ratio, speed/intensity bands, monotony, strain, and progression.
 2. **Personal history score** — percentile scoring against this athlete’s own historical running patterns.
-3. **Model-only frontier strain** — a learned TCN/embedding signal using embedding novelty, readiness forecast error, and similarity to reference risky blocks.
+3. **Accumulated frontier state** — a learned TCN/embedding signal that jumps on frontier strain spikes and decays based on subsequent load/recovery context.
 4. **Frontier-integrated risk** — headline score blending interpretable load logic with the learned frontier model.
 
 It also includes a separate **recovery risk** track using readiness, HRV, sleep/body battery, insufficient rest, and under-recovered training context.
@@ -55,14 +55,14 @@ Monitoring evidence:
 | Literature high days | `438` |
 | Personalized high days | `580` |
 | Combined operational high days | `784` |
-| Frontier high days | `190 / 2,792` |
-| All-agree days | `667` |
-| Frontier high while literature not high | `151` |
+| Frontier high days | `226 / 2,792` |
+| All-agree days | `1,027` |
+| Frontier high while literature not high | `172` |
 
 Retrospective reference checks:
 
-- Before the spring 2024 bone-stress reference window, frontier high appeared with `52` days lead and all-track agreement appeared with `51` days lead.
-- Before the Feb–Mar 2025 bike-heavy running ramp reference period, frontier/integrated high appeared with `56` days lead.
+- Before the spring 2024 bone-stress reference window, accumulated frontier high appeared with `50` days lead and all-track agreement appeared with `52` days lead.
+- Before the Feb–Mar 2025 bike-heavy running ramp reference period, integrated high appeared with `56` days lead; accumulated frontier state stayed moderate in that lookback.
 
 These checks are retrospective validation aids. Event/reference dates are not used by the scoring algorithm.
 
@@ -93,10 +93,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-If using the live coach API, set an OpenRouter key:
+If using the live coach API, set an OpenAI key:
 
 ```bash
-export OPENROUTER_API_KEY=your_key_here
+export OPENAI_API_KEY=your_key_here
 ```
 
 Run the backend:
@@ -176,7 +176,7 @@ data/processed/          Processed daily feature snapshots
 - `src/modeling/tcn.py` — TCN model architecture
 - `scripts/pretrain_masked_tcn.py` — self-supervised masked reconstruction
 - `scripts/finetune_tcn_from_pretrained.py` — readiness fine-tuning
-- `src/frontier_monitoring.py` — frontier strain and integrated score logic
+- `src/frontier_monitoring.py` — frontier strain, accumulated frontier state, and integrated score logic
 - `scripts/score_athlete_risk.py` — risk scoring and bone-stress running-load scores
 - `src/coach_api.py` — live local coaching API
 - `web/src/App.tsx` — local UI routes
@@ -189,11 +189,3 @@ data/processed/          Processed daily feature snapshots
 - Frontier thresholds are useful monitoring heuristics, not medically validated cutoffs.
 - Some outputs depend on private Garmin exports that are intentionally not committed.
 - Retrospective reference periods help evaluate plausibility but do not prove prospective generalization.
-
-## Suggested demo video structure
-
-1. **Why build it?** Wearables produce too much raw data and too little interpretable training guidance.
-2. **How it works.** Show ingestion → TCN embeddings → frontier score → Date Explorer / Athlete Profile.
-3. **Evidence.** Show Methods & Results and Evaluation pages: model improvement, agreement counts, retrospective checks.
-4. **Use cases.** Athlete self-monitoring, coaching review, training-load explanation, recovery-aware planning.
-5. **What would come next.** Better prospective validation, multi-athlete evaluation, interactive counterfactual simulator, and safer deployment/data privacy controls.

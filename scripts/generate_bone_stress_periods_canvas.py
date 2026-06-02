@@ -39,7 +39,7 @@ def build_period_payload(
                 "pattern": str(period.get("dominant_bone_stress_reason", "")).replace("_", " "),
                 "summary": str(period.get("period_summary", "")),
                 "allAgreeDays": int((window["monitoring_signal_agreement"] == "all_agree").sum()) if not window.empty else 0,
-                "frontierHighDays": int((window["frontier_strain_level"] == "high").sum()) if not window.empty else 0,
+                "frontierHighDays": int((window["accumulated_frontier_level"] == "high").sum()) if not window.empty else 0,
                 "literatureHighDays": int((window["literature_bone_stress_level"] == "high").sum()) if not window.empty else 0,
             }
         )

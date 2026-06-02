@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Quick test of agent with OpenRouter API."""
+"""Quick test of agent with the chat completions API."""
 
 import json
 import os
@@ -7,9 +7,9 @@ import sys
 
 sys.path.insert(0, "/Users/callumsherry/athlete-state-model")
 
-api_key = os.getenv("OPENROUTER_API_KEY")
+api_key = os.getenv("OPENAI_API_KEY")
 if not api_key:
-    print("✗ OPENROUTER_API_KEY is not set")
+    print("✗ OPENAI_API_KEY is not set")
     sys.exit(1)
 
 try:
@@ -30,7 +30,7 @@ try:
     print("✓ get_day test passed")
     print(f"  Score: {result['combined_score']}, Alert: {result['alert_label']}\n")
 
-    print("Testing OpenRouter API connection...")
+    print("Testing API connection...")
     print(f"Using API key: {api_key[:20]}...\n")
 
     headers = {
@@ -39,7 +39,7 @@ try:
     }
 
     payload = {
-        "model": "openrouter/auto",
+        "model": os.getenv("OPENAI_MODEL", "gpt-4.1-mini"),
         "messages": [{"role": "user", "content": "What is 2+2?"}],
         "temperature": 0.5,
         "max_tokens": 50,
@@ -47,7 +47,7 @@ try:
 
     try:
         response = httpx.post(
-            "https://openrouter.ai/api/v1/chat/completions",
+            "https://api.openai.com/v1/chat/completions",
             json=payload,
             headers=headers,
             timeout=10.0,
@@ -58,7 +58,7 @@ try:
             data = response.json()
             if "choices" in data and data["choices"]:
                 msg = data["choices"][0].get("message", {}).get("content", "")
-                print("✓ OpenRouter API working!")
+                print("✓ API working!")
                 print(f"  Response: {msg[:100]}...")
             else:
                 print("✗ Unexpected response format")
@@ -68,13 +68,13 @@ try:
             print(response.text[:500])
 
     except httpx.TimeoutException:
-        print("✗ Request timeout (OpenRouter may be slow)")
+        print("✗ Request timeout")
     except httpx.HTTPError as e:
         print(f"✗ HTTP error: {e}")
 
     print("\n✓ All tests passed! Ready to run interactive agent.")
     print("\nTo start the interactive agent:")
-    print("  export OPENROUTER_API_KEY='sk-or-...'" )
+    print("  export OPENAI_API_KEY='your_key_here'" )
     print("  python scripts/run_coaching_agent.py")
 
 except Exception as e:

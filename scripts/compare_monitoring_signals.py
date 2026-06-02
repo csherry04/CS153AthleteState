@@ -34,14 +34,14 @@ def build_comparison_frame(scores: pd.DataFrame) -> pd.DataFrame:
 
 
 def summarize_disagreements(frame: pd.DataFrame) -> dict[str, object]:
-    has_frontier = frame["frontier_strain_score"].notna()
+    has_frontier = frame["accumulated_frontier_state"].notna()
     summary = {
         "days_scored": int(len(frame)),
         "literature_high_days": int((frame["literature_bone_stress_level"] == "high").sum()),
         "personalized_high_days": int((frame["personalized_bone_stress_level"] == "high").sum()),
         "combined_high_days": int((frame["bone_stress_risk_level"] == "high").sum()),
         "frontier_coverage_days": int(has_frontier.sum()),
-        "frontier_high_days": int((frame.loc[has_frontier, "frontier_strain_level"] == "high").sum())
+        "frontier_high_days": int((frame.loc[has_frontier, "accumulated_frontier_level"] == "high").sum())
         if has_frontier.any()
         else 0,
         "agreement_counts": frame["monitoring_signal_agreement"].value_counts(dropna=False).to_dict()
@@ -56,7 +56,7 @@ def summarize_disagreements(frame: pd.DataFrame) -> dict[str, object]:
         "frontier_high_literature_not": int(
             (
                 has_frontier
-                & (frame["frontier_strain_level"] == "high")
+                & (frame["accumulated_frontier_level"] == "high")
                 & (frame["literature_bone_stress_level"] != "high")
             ).sum()
         )
@@ -74,7 +74,7 @@ def write_markdown(summary: dict[str, object], disagreements: pd.DataFrame, outp
         "",
         "- **Literature track:** Gabbett ACWR zones, Edwards speed bands, Foster monotony/strain [5,8,9,45]",
         "- **Personalized track:** percentile scoring vs your own running history",
-        "- **Frontier track:** TCN embedding novelty, readiness forecast error, similarity to spring 2024 reference block",
+        "- **Frontier track:** TCN embedding novelty, negative readiness surprise, similarity to spring 2024 reference block",
         "",
         "## Summary",
         "",
@@ -102,7 +102,7 @@ def write_markdown(summary: dict[str, object], disagreements: pd.DataFrame, outp
             lines.append(
                 f"| {row['date'].date()} | {row['literature_bone_stress_score']:.0f} | "
                 f"{row['personalized_bone_stress_score']:.0f} | "
-                f"{row.get('frontier_strain_score', float('nan')):.0f} | "
+                f"{row.get('accumulated_frontier_state', float('nan')):.0f} | "
                 f"{row.get('monitoring_signal_agreement', '')} | {row.get('bone_stress_risk_reason', '')} |"
             )
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")

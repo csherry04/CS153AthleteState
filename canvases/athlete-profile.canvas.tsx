@@ -60,7 +60,7 @@ const profile = {
     },
     {
       "title": "Multivariate strain without obvious load (frontier)",
-      "detail": "151 days had high learned-state strain while literature load was low. The model sometimes sees recovery/load decoupling that rule scores miss \u2014 worth checking sleep, HRV, and mixed sport fatigue on those days."
+      "detail": "172 days had high learned-state strain while literature load was low. The model sometimes sees recovery/load decoupling that rule scores miss \u2014 worth checking sleep, HRV, and mixed sport fatigue on those days."
     },
     {
       "title": "Alerts during modest weekly running",
@@ -81,7 +81,7 @@ const profile = {
     {
       "priority": "medium",
       "action": "When frontier is high but literature is low, check readiness/HRV before adding intensity",
-      "why": "These are days where the TCN sees atypical multivariate state \u2014 forecast error or embedding drift \u2014 not just km."
+      "why": "These are days where the TCN sees atypical multivariate state \u2014 negative readiness surprise or embedding drift \u2014 not just km."
     },
     {
       "priority": "medium",
@@ -91,7 +91,7 @@ const profile = {
     {
       "priority": "low",
       "action": "Track agreement tags: investigate when all three tracks say high",
-      "why": "Only 667 all-agree days in full history \u2014 those are your strongest convergence signals."
+      "why": "Only 1027 all-agree days in full history \u2014 those are your strongest convergence signals."
     }
   ],
   "trackInsights": [
@@ -108,7 +108,7 @@ const profile = {
     {
       "track": "Frontier",
       "reads_as": "Learned multivariate strain",
-      "your_pattern": "2792 scored days; 190 high. Peaks when embedding novelty or readiness forecast error spike \u2014 often around labeled spring 2024 window and selected 2024\u20132025 dates."
+      "your_pattern": "2792 scored days; 226 high. Peaks when embedding novelty, negative readiness surprise, or reference-block similarity spike \u2014 often around labeled spring 2024 window and selected 2024\u20132025 dates."
     }
   ],
   "riskWindows": [
@@ -299,6 +299,10 @@ function ActiveSection({ section }: { section: SectionId }) {
               <Stat value={String(profile.latestOperational.run7Km)} label="7-day run km" tone="info" />
               <Stat value={String(profile.latestOperational.accumulatedState)} label="Accumulated load state" tone="warning" />
             </Grid>
+            <Text tone="secondary" size="small">
+              Accumulated load state is a slow-decay running strain score. It blends recent 7-day/28-day load, ramp rate,
+              intensity, workouts, and monotony, then carries that strain forward so risk can linger after mileage eases.
+            </Text>
             <Divider />
             <Text>{profile.latestOperational.recommendation}</Text>
             {profile.latestOperational.counterfactual ? (
@@ -398,7 +402,7 @@ function ActiveSection({ section }: { section: SectionId }) {
         <Grid columns={3} gap={12}>
           <Stat value="438" label="Literature high days" tone="warning" />
           <Stat value="580" label="Personal history high days" tone="warning" />
-          <Stat value="190" label="Frontier high days" tone="danger" />
+          <Stat value="226" label="Frontier high days" tone="danger" />
         </Grid>
         <Table
           headers={['Signal', 'What it says about you', 'Why it matters']}
@@ -419,14 +423,14 @@ function ActiveSection({ section }: { section: SectionId }) {
               'Use it to decide whether to reduce mileage/intensity. It explains the training-load reason behind most alerts.',
             ],
             [
-              'Model-only frontier strain',
-              'It is more selective: 190 high days out of 2,792 scored frontier days.',
-              'When it fires, the model sees unusual learned-state strain, forecast error, or similarity to prior risky blocks — useful for hidden-strain checks, not just km counting.',
+              'Accumulated frontier state',
+              'It carries high states forward: 226 high days out of 2,792 scored frontier days.',
+              'When it fires, the model sees unusual learned-state strain, negative readiness surprise, reference similarity, or recent carried strain — useful for hidden-strain checks, not just km counting.',
             ],
             [
               'Frontier-integrated risk',
               'This should be the headline score when browsing days because it keeps the running-load explanation but adds the frontier signal.',
-              'If integrated risk is high, inspect whether it came from load, frontier strain, or both. The action differs depending on the source.',
+              'If integrated risk is high, inspect whether it came from load, accumulated frontier state, or both. The action differs depending on the source.',
             ],
             [
               'Recovery risk',
@@ -443,7 +447,7 @@ function ActiveSection({ section }: { section: SectionId }) {
             is a sharp change against your own recent history. Treat these as ramp-rate warnings.
           </Callout>
           <Callout tone="info" title="Frontier high while rules are modest">
-            This is less frequent and more selective. Check sleep, HRV/readiness, recent cross-training, illness/stress,
+            This means learned-state strain has crossed high and may linger after the raw spike. Check sleep, HRV/readiness, recent cross-training, illness/stress,
             or whether the day resembles spring 2024 / other reference blocks.
           </Callout>
           <Callout tone="success" title="Literature high but personalized lower">
@@ -461,7 +465,7 @@ function ActiveSection({ section }: { section: SectionId }) {
           rows={[
             ['1', 'Is Frontier-integrated risk high?', 'Start with the headline score because it reflects both normal load logic and the model.'],
             ['2', 'Is Rules + personal load risk high?', 'If yes, the issue is likely training-load management: volume, progression, monotony, or intensity.'],
-            ['3', 'Is Model-only frontier strain high?', 'If yes, look for hidden strain or state similarity that mileage alone does not explain.'],
+            ['3', 'Is Accumulated frontier state high?', 'If yes, look for hidden strain or state similarity that mileage alone does not explain.'],
             ['4', 'Is Recovery risk high?', 'If yes, protect readiness before adding intensity, even if running load looks manageable.'],
           ]}
           striped

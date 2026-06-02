@@ -23,7 +23,7 @@ def build_briefing(scores: pd.DataFrame, risk: pd.DataFrame) -> dict[str, object
     track_rows = [
         ["Literature", f"{latest.get('literature_bone_stress_score', 0):.0f}", str(latest.get("literature_bone_stress_level", ""))],
         ["Personalized", f"{latest.get('personalized_bone_stress_score', 0):.0f}", str(latest.get("personalized_bone_stress_level", ""))],
-        ["Frontier", f"{latest.get('frontier_strain_score', 0):.0f}" if pd.notna(latest.get("frontier_strain_score")) else "—", str(latest.get("frontier_strain_level") or "—")],
+        ["Frontier", f"{latest.get('accumulated_frontier_state', 0):.0f}" if pd.notna(latest.get("accumulated_frontier_state")) else "—", str(latest.get("accumulated_frontier_level") or "—")],
         ["Combined", f"{latest.get('bone_stress_risk_score', 0):.0f}", str(latest.get("bone_stress_risk_level", ""))],
     ]
 
@@ -31,7 +31,7 @@ def build_briefing(scores: pd.DataFrame, risk: pd.DataFrame) -> dict[str, object
         {
             "date": row["date"].date().isoformat(),
             "bone": float(row["bone_stress_risk_score"]),
-            "frontier": float(row["frontier_strain_score"]) if pd.notna(row.get("frontier_strain_score")) else None,
+            "frontier": float(row["accumulated_frontier_state"]) if pd.notna(row.get("accumulated_frontier_state")) else None,
         }
         for _, row in week.iterrows()
     ]
@@ -119,17 +119,21 @@ export default function DailyBriefing() {{
         <Stat value={{briefing.trackRows[2][1]}} label="Frontier score" tone="info" />
         <Stat value={{briefing.recoveryRiskLevel}} label="Recovery risk" tone="info" />
       </Grid>
+      <Text tone="secondary" size="small">
+        Accumulated load state is the running-load carryover score. It decays slowly, so recent high volume, ramp rate,
+        intensity, workouts, and monotony can keep the state elevated after the latest 7-day mileage drops.
+      </Text>
 
       <H2>Three tracks today</H2>
       <Table headers={{['Track', 'Score', 'Level']}} rows={{briefing.trackRows}} striped />
 
       <H2>7-day trend</H2>
-      <Text tone="secondary" size="small">Combined bone-stress score and frontier strain · last 7 scored days</Text>
+      <Text tone="secondary" size="small">Combined bone-stress score and accumulated frontier state · last 7 scored days</Text>
       <BarChart
         categories={{weekCategories}}
         series={{[
           {{ name: 'Combined bone stress', data: weekBone, tone: 'warning' }},
-          {{ name: 'Frontier strain', data: weekFrontier, tone: 'info' }},
+          {{ name: 'Accumulated frontier state', data: weekFrontier, tone: 'info' }},
         ]}}
         height={{220}}
       />
@@ -193,7 +197,7 @@ export default function FrontierOutcomes() {{
           <Divider />
           <H2>{{target.label}}</H2>
           <Text tone="secondary" size="small">
-            Window {{target.symptom_window_start}} → {{target.evaluation_end}}
+            Counted lookback {{target.lookback_window_start}} → {{target.lookback_window_end}} · reference window {{target.symptom_window_start}} → {{target.evaluation_end}}
           </Text>
           <Table
             headers={{['Signal', 'Count in lookback']}}

@@ -43,7 +43,7 @@ const briefing = {
     ],
     [
       "Frontier",
-      "45",
+      "59",
       "moderate"
     ],
     [
@@ -56,37 +56,37 @@ const briefing = {
     {
       "date": "2026-05-09",
       "bone": 59.64596428571428,
-      "frontier": 57.56864152723814
+      "frontier": 57.14739729006549
     },
     {
       "date": "2026-05-10",
       "bone": 66.52185714285714,
-      "frontier": 56.23704466437275
+      "frontier": 60.284751592746275
     },
     {
       "date": "2026-05-11",
       "bone": 63.7120226538398,
-      "frontier": 38.29024903654368
+      "frontier": 58.47620904496389
     },
     {
       "date": "2026-05-12",
       "bone": 55.56516071428571,
-      "frontier": 28.843431278508955
+      "frontier": 56.72192277361497
     },
     {
       "date": "2026-05-13",
       "bone": 57.316107142857135,
-      "frontier": 65.27510112829032
+      "frontier": 62.70914762188771
     },
     {
       "date": "2026-05-14",
       "bone": 67.8497678178038,
-      "frontier": 57.5593817425797
+      "frontier": 60.82787319323108
     },
     {
       "date": "2026-05-15",
       "bone": 58.432357064179016,
-      "frontier": 45.27953819345989
+      "frontier": 59.003036997434144
     }
   ],
   "recoveryRiskLevel": "moderate",
@@ -129,17 +129,21 @@ export default function DailyBriefing() {
         <Stat value={briefing.trackRows[2][1]} label="Frontier score" tone="info" />
         <Stat value={briefing.recoveryRiskLevel} label="Recovery risk" tone="info" />
       </Grid>
+      <Text tone="secondary" size="small">
+        Accumulated load state is the running-load carryover score. It decays slowly, so recent high volume, ramp rate,
+        intensity, workouts, and monotony can keep the state elevated after the latest 7-day mileage drops.
+      </Text>
 
       <H2>Three tracks today</H2>
       <Table headers={['Track', 'Score', 'Level']} rows={briefing.trackRows} striped />
 
       <H2>7-day trend</H2>
-      <Text tone="secondary" size="small">Combined bone-stress score and frontier strain · last 7 scored days</Text>
+      <Text tone="secondary" size="small">Combined bone-stress score and accumulated frontier state · last 7 scored days</Text>
       <BarChart
         categories={weekCategories}
         series={[
           { name: 'Combined bone stress', data: weekBone, tone: 'warning' },
-          { name: 'Frontier strain', data: weekFrontier, tone: 'info' },
+          { name: 'Accumulated frontier state', data: weekFrontier, tone: 'info' },
         ]}
         height={220}
       />

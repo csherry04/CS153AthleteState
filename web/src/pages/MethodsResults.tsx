@@ -13,8 +13,8 @@ const pipelineRows = [
   ['2', 'Feature validation', 'Check missingness, ranges, data coverage, and daily feature quality.'],
   ['3', 'Time-series windows', 'Build chronological 28-day windows without fitting transforms on future data.'],
   ['4', 'Modeling', 'Train baselines, supervised TCN, and masked-pretrained TCN for next-day readiness.'],
-  ['5', 'Frontier state', 'Export embeddings, anomaly scores, nearest neighbors, and readiness forecast errors.'],
-  ['6', 'Risk interpretation', 'Blend rule-based load, personalized load, learned frontier strain, and recovery context.'],
+  ['5', 'Frontier state', 'Export embeddings, anomaly scores, nearest neighbors, and negative readiness surprise.'],
+  ['6', 'Risk interpretation', 'Blend rule-based load, personalized load, accumulated frontier state, and recovery context.'],
   ['7', 'Product layer', 'Local web UI and live coach API for date exploration, briefing, Q&A, and profile summaries.'],
 ];
 
@@ -24,8 +24,7 @@ export default function MethodsResults() {
       <Stack gap={8}>
         <H1>Methods & Results</H1>
         <Text>
-          A concise technical summary for the CS 153 submission: what was built, how the model works, and what evidence
-          supports the frontier layer.
+          A concise technical summary: what was built, how the model works, and what evidence supports the frontier layer.
         </Text>
       </Stack>
 
@@ -76,9 +75,9 @@ export default function MethodsResults() {
         headers={['Component', 'Why it exists', 'Interpretation']}
         rows={[
           ['Embedding novelty', 'Detects days whose learned 28-day state is unusual.', 'Useful for “this day looks different from normal training state.”'],
-          ['Readiness forecast error', 'Measures when the model fails to predict readiness well.', 'Useful for days where the athlete-state model sees instability or mismatch.'],
+          ['Negative readiness surprise', 'Measures when actual readiness is worse than the model predicted.', 'Useful for days where the learned state expected better recovery than actually occurred.'],
           ['Reference-block similarity', 'Compares the latent state to known concerning/risky reference blocks.', 'Useful for asking whether today resembles prior periods worth monitoring.'],
-          ['Frontier-integrated risk', 'Blends rules + personal load with frontier strain.', 'Useful as the headline score while preserving interpretable breakdowns.'],
+          ['Frontier-integrated risk', 'Blends rules + personal load with accumulated frontier state.', 'Useful as the headline score while preserving interpretable breakdowns.'],
         ]}
         striped
       />

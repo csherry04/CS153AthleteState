@@ -9,17 +9,7 @@
       "notes": "Reported bone injury after sustained running blocks in early 2024. Edit dates if your clinical timeline differs."
     }
   ],
-  "reference_periods": [
-    {
-      "id": "feb_mar_2025_ramp",
-      "label": "Feb–Mar 2025 bike-heavy running ramp",
-      "type": "reference_load_block",
-      "start_date": "2025-02-24",
-      "end_date": "2025-03-08",
-      "evaluation_end": "2025-03-08",
-      "notes": "Pseudo-prospective reference — steep running progression during bike-heavy block, not a labeled injury."
-    }
-  ],
+  "reference_periods": [],
   "evaluation": {
     "lookback_days": 56,
     "accumulated_thresholds": [45, 65],

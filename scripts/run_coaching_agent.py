@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Coaching agent: OpenRouter-powered Q&A with tool grounding.
+"""Coaching agent: Q&A with tool grounding.
 
 Usage:
     python scripts/run_coaching_agent.py
@@ -34,22 +34,22 @@ except ImportError:
 
 
 class CoachingAgent:
-    """Agent that calls OpenRouter with tool grounding."""
+    """Agent that calls an LLM with tool grounding."""
 
     def __init__(self, api_key: str | None = None):
-        """Initialize agent with OpenRouter credentials."""
-        self.api_key = api_key or os.getenv("OPENROUTER_API_KEY")
+        """Initialize agent credentials."""
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
-            raise ValueError("OPENROUTER_API_KEY not set. Pass as argument or set env var.")
+            raise ValueError("OPENAI_API_KEY not set. Pass as argument or set env var.")
 
         self.tools = CoachingAgentTools()
-        self.model = "openrouter/auto"  # Auto-routes to best available model
-        self.base_url = "https://openrouter.ai/api/v1"
+        self.model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+        self.base_url = "https://api.openai.com/v1"
         self.max_turns = 5
 
     def run_interactive(self):
         """Run an interactive REPL for Q&A."""
-        print("\n=== Coaching Agent (OpenRouter + Frontier Monitoring) ===")
+        print("\n=== Coaching Agent (Frontier Monitoring) ===")
         print("Ask questions about your training, monitoring, and bone-stress risk.")
         print("Type 'quit' to exit.\n")
 
@@ -119,7 +119,7 @@ When you need data, call the appropriate tool."""
     def _agentic_loop(self, system_prompt: str, messages: list[dict[str, Any]]) -> str | None:
         """Run the agentic loop: LLM -> tool calls -> tool results -> LLM response."""
         for turn in range(self.max_turns):
-            response = self._call_openrouter(system_prompt, messages)
+            response = self._call_model(system_prompt, messages)
 
             if response is None:
                 return None
@@ -165,8 +165,8 @@ When you need data, call the appropriate tool."""
 
         return content
 
-    def _call_openrouter(self, system_prompt: str, messages: list[dict[str, Any]]) -> dict[str, Any] | None:
-        """Call OpenRouter API with tool calling."""
+    def _call_model(self, system_prompt: str, messages: list[dict[str, Any]]) -> dict[str, Any] | None:
+        """Call the chat completions API with tool calling."""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -204,17 +204,17 @@ When you need data, call the appropriate tool."""
             }
 
         except httpx.HTTPError as e:
-            print(f"ERROR calling OpenRouter: {e}")
+            print(f"ERROR calling API: {e}")
             return None
 
     def _extract_tool_calls(self, content: str, tool_calls: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
-        """Normalize tool calls from OpenRouter or XML-like tool tags.
+        """Normalize tool calls from API or XML-like tool tags.
 
         Returns a list of dicts: {"id": str, "name": str, "args": dict}
         """
         normalized: list[dict[str, Any]] = []
 
-        # Primary: OpenRouter tool_calls
+        # Primary: API tool_calls
         if tool_calls:
             for tool_call in tool_calls:
                 function = tool_call.get("function", tool_call)
@@ -327,7 +327,7 @@ When you need data, call the appropriate tool."""
 
 def demo_mode():
     """Run a demo with pre-defined questions (no API key needed)."""
-    print("\n=== Demo Mode (no OpenRouter calls) ===\n")
+    print("\n=== Demo Mode (no API calls) ===\n")
     tools = CoachingAgentTools()
 
     # Three killer questions
@@ -361,10 +361,10 @@ def main():
         demo_mode()
         return
 
-    api_key = os.getenv("OPENROUTER_API_KEY")
+    api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        print("ERROR: OPENROUTER_API_KEY not found.")
-        print("Set it with: export OPENROUTER_API_KEY=sk-or-...")
+        print("ERROR: OPENAI_API_KEY not found.")
+        print("Set it with: export OPENAI_API_KEY=your_key_here")
         print("Or run with --demo flag to see example tool calls without API.")
         sys.exit(1)
 

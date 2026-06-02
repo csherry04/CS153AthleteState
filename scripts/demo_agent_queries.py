@@ -6,7 +6,7 @@ This shows how the agent responds to the three killer questions without
 requiring manual input or a long-running interactive session.
 
 Usage:
-    export OPENROUTER_API_KEY="sk-or-..."
+    export OPENAI_API_KEY="your_key_here"
     python scripts/demo_agent_queries.py
 """
 
@@ -120,9 +120,9 @@ def run_demo():
     print("2. Comparison: The agent contextualizes current state vs. past patterns")
     print("3. What-if: Counterfactuals show trade-offs without retraining")
     print("4. Frontier model: Explains why your risk profile changed (accumulated state)")
-    print("\n✓ Ready for CS153 demo!")
-    print("\nTo use the interactive agent with OpenRouter:")
-    print("  export OPENROUTER_API_KEY='sk-or-...'")
+    print("\n✓ Ready for demo!")
+    print("\nTo use the interactive agent:")
+    print("  export OPENAI_API_KEY='your_key_here'")
     print("  python scripts/run_coaching_agent.py")
     print()
 

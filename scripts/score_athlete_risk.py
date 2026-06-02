@@ -826,8 +826,11 @@ BONE_STRESS_OUTPUT_COLUMNS = [
     "integrated_bone_stress_score",
     "frontier_strain_score",
     "frontier_strain_level",
+    "accumulated_frontier_state",
+    "accumulated_frontier_level",
     "embedding_novelty_score",
     "readiness_forecast_error_score",
+    "readiness_absolute_forecast_error_score",
     "reference_block_similarity_score",
     "monitoring_signal_agreement",
     "operational_alert_tier",
@@ -1347,7 +1350,7 @@ def main() -> None:
         lambda row: monitoring_agreement(
             str(row.get("literature_bone_stress_level", "low")),
             str(row.get("personalized_bone_stress_level", "low")),
-            row.get("frontier_strain_level"),
+            row.get("accumulated_frontier_level"),
         ),
         axis=1,
     )

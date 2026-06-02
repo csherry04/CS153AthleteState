@@ -188,9 +188,9 @@ Rolling 7-day and 28-day sums of this composite drive ACWR-style monitoring. Com
 |---|---|---|
 | **Literature** | Gabbett ACWR zones (0.8 / 1.3 / 1.5), Edwards speed bands (2.5 / 3.5 / 4.5 m/s), Foster monotony (>2.0) and strain [5,45] | Defensible objective monitoring |
 | **Personalized** | Percentile scoring vs your own running history | Individualized progression detection |
-| **Frontier** | TCN embedding novelty, readiness forecast error, similarity to labeled reference blocks | Multivariate learned-state signal |
+| **Frontier** | Accumulated TCN state from embedding novelty, negative readiness surprise, and similarity to labeled reference blocks | Multivariate learned-state signal with load/recovery-sensitive decay |
 
-The operational `bone_stress_risk_score` blends literature and personalized components (50/50 base, with spike terms). Where embeddings exist, `integrated_bone_stress_score` adds frontier strain (65% literature+personalized, 35% frontier). `scripts/compare_monitoring_signals.py` reports agreement and disagreement across tracks.
+The operational `bone_stress_risk_score` blends literature and personalized components (50/50 base, with spike terms). Where embeddings exist, `integrated_bone_stress_score` adds accumulated frontier state (65% literature+personalized, 35% frontier). `scripts/compare_monitoring_signals.py` reports agreement and disagreement across tracks.
 
 Implementation modules:
 
@@ -213,7 +213,9 @@ Final `bone_stress_risk_score` blends these channels (25% 7-day load, 18% 28-day
 
 **Outputs:**
 - `bone_stress_risk_score`, `bone_stress_risk_level`, `bone_stress_risk_reason`
-- `accumulated_bone_stress_state` with slower decay than general risk (default 0.91)
+- `accumulated_bone_stress_state`: a slow-decay running-load carryover score. It uses the daily running-only strain
+  contribution (7-day load, 28-day load, progression/ramp, intensity, workout load, and monotony), then applies
+  `carry = 0.91 × previous + 0.09 × today`, so tissue/load context can remain elevated after the latest week eases.
 - `bone_stress_carryover_score` (21-day rolling max of accumulated state)
 - Full history file: `outputs/analysis/athlete_bone_stress_scores.csv`
 

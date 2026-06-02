@@ -4,16 +4,15 @@ const agreementRows = [
   ['Literature high days', '438', 'Objective sports-science style running-load rules.'],
   ['Personalized high days', '580', 'Percentile-based alerts versus this athlete’s own history.'],
   ['Rules + personal high days', '784', 'Operational load-risk score combining literature and personal context.'],
-  ['Frontier high days', '190 / 2,792', 'More selective learned-state signal.'],
-  ['Frontier high, literature not', '151', 'Potential hidden-strain/model-signal days without objective high literature load.'],
+  ['Frontier high days', '226 / 2,792', 'Accumulated learned-state signal with lingering high states.'],
+  ['Frontier high, literature not', '172', 'Potential hidden-strain/model-signal days without objective high literature load.'],
   ['Personalized high, literature not', '305', 'Days that are big for this athlete even if not objectively extreme.'],
 ];
 
 const validationRows = [
-  ['Spring 2024 bone-stress reference', 'Frontier high first appeared 52 days before evaluation end; all-track agreement appeared 51 days before.', 'Retrospective validation only; scoring did not use event labels.'],
-  ['Feb–Mar 2025 bike-heavy running ramp', 'Frontier high and integrated high appeared 56 days before the reference end.', 'Reference period, not a diagnosed injury label.'],
+  ['Spring 2024 bone-stress reference', 'Accumulated frontier high first appeared 50 days before evaluation end; all-track agreement appeared 52 days before.', 'Retrospective validation only; scoring did not use event labels.'],
   ['Model forecast benchmark', 'Masked-pretrained TCN improved MAE from 14.01 to 12.26 versus supervised-only TCN.', 'Shows representation learning helped readiness forecasting.'],
-  ['Agreement analysis', '667 all-agree days; 1,341 days where load tracks agree but frontier differs.', 'Disagreement is analyzed rather than treated as a bug.'],
+  ['Agreement analysis', '1,027 all-agree days; 981 days where load tracks agree but frontier differs.', 'Disagreement is analyzed rather than treated as a bug.'],
 ];
 
 const reproduceRows = [
@@ -42,8 +41,8 @@ export default function EvaluationReproducibility() {
       <Grid columns={4} gap={12}>
         <Stat value="12.26" label="Best readiness MAE" tone="success" />
         <Stat value="15.31" label="Best readiness RMSE" tone="success" />
-        <Stat value="667" label="All-agree days" tone="info" />
-        <Stat value="151" label="Frontier high, lit not" tone="warning" />
+        <Stat value="1,027" label="All-agree days" tone="info" />
+        <Stat value="172" label="Frontier high, lit not" tone="warning" />
       </Grid>
 
       <Card>

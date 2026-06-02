@@ -13,7 +13,7 @@ from src.counterfactual_simulator import simulate_volume_reduction
 
 
 class CoachingAgentTools:
-    """Tools for an OpenRouter agent to interact with athlete state and monitoring."""
+    """Tools for the coaching agent to interact with athlete state and monitoring."""
 
     def __init__(
         self,
@@ -98,7 +98,9 @@ class CoachingAgentTools:
             "reason": day_explorer.get("reason", ""),
             "literature_score": round(row.get("literature_bone_stress_score", 0), 2),
             "personalized_score": round(row.get("personalized_bone_stress_score", 0), 2),
-            "frontier_score": round(row.get("frontier_strain_score", 0), 2) if pd.notna(row.get("frontier_strain_score")) else None,
+            "frontier_score": round(row.get("accumulated_frontier_state", 0), 2)
+            if pd.notna(row.get("accumulated_frontier_state"))
+            else None,
             "embedding_novelty_score": round(row.get("embedding_novelty_score", 0), 2) if pd.notna(row.get("embedding_novelty_score")) else None,
             "contrastive_novelty_score": round(row.get("contrastive_novelty_score", 0), 2) if pd.notna(row.get("contrastive_novelty_score")) else None,
             "readiness_forecast_error_score": round(row.get("readiness_forecast_error_score", 0), 2)
@@ -317,7 +319,7 @@ class CoachingAgentTools:
             actual_integrated = row.get("integrated_bone_stress_score", row.get("bone_stress_risk_score"))
             actual_literature = row.get("literature_bone_stress_score")
             actual_personalized = row.get("personalized_bone_stress_score")
-            actual_frontier = row.get("frontier_strain_score")
+            actual_frontier = row.get("accumulated_frontier_state")
             day_results.append(
                 {
                     "date": row["date"].strftime("%Y-%m-%d"),
@@ -452,7 +454,7 @@ class CoachingAgentTools:
             "window": {"start_date": start_date, "end_date": end_date},
             "literature": rows_for("literature_bone_stress_score", "literature_bone_stress_level", "literature"),
             "personalized": rows_for("personalized_bone_stress_score", "personalized_bone_stress_level", "personalized"),
-            "frontier": rows_for("frontier_strain_score", "frontier_strain_level", "frontier"),
+            "frontier": rows_for("accumulated_frontier_state", "accumulated_frontier_level", "frontier"),
             "interpretation": "Literature highlights objective workload-rule risk, personalized highlights unusual load for this athlete, and frontier highlights learned multivariate strain/anomaly states.",
         }
 
@@ -495,7 +497,7 @@ class CoachingAgentTools:
 
         frontier_evidence = {
             "score": day.get("frontier_score"),
-            "basis": "Learned-state strain from embedding novelty, readiness forecast error, and reference-block similarity. It should not be explained as ACWR-driven unless the stored frontier attribution specifically says so.",
+            "basis": "Learned-state strain from embedding novelty, negative readiness surprise, and reference-block similarity. It should not be explained as ACWR-driven unless the stored frontier attribution specifically says so.",
             "direct_components": {
                 "embedding_novelty_score": day.get("embedding_novelty_score"),
                 "contrastive_novelty_score": day.get("contrastive_novelty_score"),
@@ -647,7 +649,9 @@ class CoachingAgentTools:
                 "days": int(len(frame)),
                 "peak_integrated_score": round(float(frame["integrated_bone_stress_score"].max()), 2),
                 "mean_integrated_score": round(float(frame["integrated_bone_stress_score"].mean()), 2),
-                "peak_frontier_score": round(float(frame["frontier_strain_score"].max()), 2) if "frontier_strain_score" in frame else None,
+                "peak_frontier_score": round(float(frame["accumulated_frontier_state"].max()), 2)
+                if "accumulated_frontier_state" in frame
+                else None,
                 "peak_literature_score": round(float(frame["literature_bone_stress_score"].max()), 2),
                 "peak_personalized_score": round(float(frame["personalized_bone_stress_score"].max()), 2),
                 "peak_7d_km": round(float(frame["running_7d_sum_m"].max()) / 1000, 1),
@@ -832,7 +836,7 @@ class CoachingAgentTools:
         return diffs if diffs else ["No major differences"]
 
     def list_tool_descriptions(self) -> list[dict[str, Any]]:
-        """Return tool definitions for OpenRouter function calling.
+        """Return tool definitions for function calling.
 
         Returns:
             List of tool definitions with parameters and descriptions.

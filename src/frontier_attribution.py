@@ -45,7 +45,7 @@ def flagged_for_attribution(row: pd.Series) -> bool:
         return True
     if agreement in {"literature_personalized_agree_frontier_differs", "mixed_signals", "all_agree"}:
         return True
-    if row.get("frontier_strain_level") == "high" and row.get("literature_bone_stress_level") != "high":
+    if row.get("accumulated_frontier_level") == "high" and row.get("literature_bone_stress_level") != "high":
         return True
     return False
 

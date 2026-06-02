@@ -1,10 +1,11 @@
-"""FastAPI backend for the coaching agent (OpenRouter + tool calls)."""
+"""FastAPI backend for the coaching agent."""
 
 from __future__ import annotations
 
 import json
 import os
 import re
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -39,6 +40,21 @@ app.add_middleware(
 TOOLS = CoachingAgentTools()
 
 
+def load_local_env() -> None:
+    env_path = Path(__file__).resolve().parents[1] / ".env"
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_local_env()
+
+
 def _system_prompt(tools: CoachingAgentTools) -> str:
     return f"""You are a coaching AI for an athlete's personal monitoring lab.
 
@@ -59,7 +75,7 @@ Critical accuracy rules:
 - If the user asks why a specific day was flagged, call explain_day_flag.
 - If the user asks what days were highlighted/flagged by models, call get_highlighted_days.
 - Never say ACWR directly caused a frontier flag. ACWR is literature/workload-rule context unless frontier attribution explicitly says otherwise.
-- For frontier explanations, distinguish direct frontier evidence (novelty, forecast error, reference similarity, attribution/neighbors) from contextual workload facts (volume, ACWR, accumulated state).
+- For frontier explanations, distinguish direct frontier evidence (novelty, negative readiness surprise, reference similarity, attribution/neighbors) from contextual workload facts (volume, ACWR, accumulated state).
 - If exact frontier feature causality is not stored, say so plainly and give the strongest available contextual interpretation.
 - Do not claim a weekly mileage range is "safe." Use phrases like "more conservative," "lower-risk relative to this ramp," or "historically better tolerated" only when supported by tool data.
 - If the user asks how steep a progression was or what it should have been, call analyze_progression and compare actual week-to-week changes against the stated reference benchmark.
@@ -207,7 +223,7 @@ def _format_day_scores(date_str: str, day: dict[str, Any]) -> str:
         f"On {date_str}, the system read as {day.get('alert_label')} / {day.get('combined_level')} "
         f"with integrated score {day.get('integrated_score', day.get('combined_score'))}. "
         f"Literature was {day.get('literature_score')}, personalized was {day.get('personalized_score')}, "
-        f"and frontier strain was {day.get('frontier_score')}. "
+        f"and accumulated frontier state was {day.get('frontier_score')}. "
         f"The main reason was {day.get('reason')}, with {day.get('run_7d_km')} km over 7 days and "
         f"accumulated state {day.get('accumulated_state')}."
     )
@@ -225,7 +241,7 @@ def _answer_spring_2024_scores() -> tuple[str, list[dict[str, Any]]]:
         "Heading into the spring 2024 bone-stress injury, all three tracks were already elevated weeks before the main March risk block.\n\n"
         f"1) First high signal: on 2024-02-05, literature was {feb5.get('literature_score')}, personalized was {feb5.get('personalized_score')}, "
         f"frontier was {feb5.get('frontier_score')}, and the integrated score was {feb5.get('integrated_score')}.\n"
-        f"2) Frontier confirmation: on 2024-02-09, frontier strain was {feb9.get('frontier_score')}, with integrated score {feb9.get('integrated_score')} and {feb9.get('run_7d_km')} km over 7 days.\n"
+        f"2) Frontier confirmation: on 2024-02-09, accumulated frontier state was {feb9.get('frontier_score')}, with integrated score {feb9.get('integrated_score')} and {feb9.get('run_7d_km')} km over 7 days.\n"
         f"3) All-track agreement: by 2024-02-10, the alert was {feb10.get('alert_label')} and agreement was {feb10.get('agreement')}.\n"
         f"4) Peak March block: on 2024-03-12, literature was {mar12.get('literature_score')}, personalized was {mar12.get('personalized_score')}, frontier was {mar12.get('frontier_score')}, and integrated score was {mar12.get('integrated_score')}.\n"
         f"5) By 2024-03-15, integrated score was {mar15.get('integrated_score')} with {mar15.get('run_7d_km')} km over 7 days.\n\n"
@@ -326,7 +342,7 @@ def _answer_frontier_day_why(date_str: str = "2024-02-09") -> tuple[str, list[di
     if day.get("contrastive_novelty_score") is not None:
         frontier_parts.append(f"contrastive novelty {day.get('contrastive_novelty_score')}")
     if day.get("readiness_forecast_error_score") is not None:
-        frontier_parts.append(f"readiness forecast error {day.get('readiness_forecast_error_score')}")
+        frontier_parts.append(f"negative readiness surprise {day.get('readiness_forecast_error_score')}")
     if day.get("reference_similarity_score") is not None:
         frontier_parts.append(f"reference similarity score {day.get('reference_similarity_score')}")
 
@@ -335,7 +351,7 @@ def _answer_frontier_day_why(date_str: str = "2024-02-09") -> tuple[str, list[di
     neighbors = day.get("neighbors") or "no nearest-neighbor summary was stored for this day"
 
     reply = (
-        f"For {date_str}, the frontier model flagged the day because its learned-state strain score was high: frontier {day.get('frontier_score')}, integrated {day.get('integrated_score')}.\n\n"
+        f"For {date_str}, the frontier model flagged the day because its accumulated learned-state score was high: frontier {day.get('frontier_score')}, integrated {day.get('integrated_score')}.\n\n"
         f"The frontier-specific components available for that day are: {components_text}. "
         f"The stored attribution/neighborhood context says: {attribution}. Similar-day context: {neighbors}.\n\n"
         f"The workload facts around the day were {day.get('run_7d_km')} km over 7 days, {day.get('run_28d_km')} km over 28 days, and accumulated bone-stress state {day.get('accumulated_state')}. "
@@ -473,11 +489,11 @@ def run_agentic_query(message: str, history: list[dict[str, str]] | None = None,
     if fast_answer:
         return fast_answer
 
-    api_key = os.getenv("OPENROUTER_API_KEY")
+    api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
-        raise HTTPException(status_code=400, detail="OPENROUTER_API_KEY not set on server")
+        raise HTTPException(status_code=400, detail="OPENAI_API_KEY not set on server")
 
-    model = os.getenv("OPENROUTER_MODEL", "anthropic/claude-3.5-haiku")
+    model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     tools_payload = [{"type": "function", "function": tool} for tool in TOOLS.list_tool_descriptions()]
@@ -518,12 +534,12 @@ def run_agentic_query(message: str, history: list[dict[str, str]] | None = None,
             "max_tokens": 600,
         }
 
-        response = httpx.post("https://openrouter.ai/api/v1/chat/completions", json=payload, headers=headers, timeout=30.0)
+        response = httpx.post("https://api.openai.com/v1/chat/completions", json=payload, headers=headers, timeout=30.0)
         response.raise_for_status()
         data = response.json()
 
         if not data.get("choices"):
-            raise HTTPException(status_code=500, detail="OpenRouter returned no choices")
+            raise HTTPException(status_code=500, detail="API returned no choices")
 
         msg = data["choices"][0].get("message", {})
         content = msg.get("content", "")
@@ -581,7 +597,7 @@ def run_agentic_query(message: str, history: list[dict[str, str]] | None = None,
             "temperature": 0.1,
             "max_tokens": 500,
         }
-        response = httpx.post("https://openrouter.ai/api/v1/chat/completions", json=payload, headers=headers, timeout=30.0)
+        response = httpx.post("https://api.openai.com/v1/chat/completions", json=payload, headers=headers, timeout=30.0)
         response.raise_for_status()
         data = response.json()
         content = data["choices"][0].get("message", {}).get("content", "") if data.get("choices") else ""
