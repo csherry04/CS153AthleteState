@@ -2,11 +2,18 @@
 
 An end-to-end wearable-data system that turns Garmin activity and wellness exports into interpretable athlete-state monitoring, learned frontier signals, and actionable training feedback.
 
+## Built artifact
+
+This project implements a complete Garmin-to-dashboard pipeline rather than only a model notebook. It includes data ingestion and validation, daily feature engineering, baseline readiness models, supervised and masked-pretrained TCN sequence models, embedding novelty analysis, athlete-specific risk scoring, retrospective evaluation scripts, generated React dashboard pages, a static deployed demo, and a local-only coaching API. The final artifact is usable as an interactive web app for reviewing training state, score equations, daily recommendations, date-level explanations, and evaluation results.
+
+
+Note: The README is a submission overview and reproducibility guide. The deployed app is the primary way to review the full artifact: it includes the project overview, methods/results, score equations, athlete profile, daily briefing, date explorer, bone-stress periods, frontier outcomes, ingestion validation, and static coaching examples.
+
 ## What it does
 
 Athlete State Lab ingests multi-year Garmin exports and builds a local web application for exploring training state, recovery risk, and bone-stress-oriented running-load patterns.
 
-The system combines four layers:
+The primary risk score system combines four layers:
 
 1. **Literature rule score** — interpretable sports-science-style load rules such as workload ratio, speed/intensity bands, monotony, strain, and progression.
 2. **Personal history score** — percentile scoring against this athlete’s own historical running patterns.
@@ -17,14 +24,14 @@ It also includes a separate **recovery risk** track using readiness, HRV, sleep/
 
 ## Why this matters
 
-Wearable dashboards often show many raw metrics but do not explain what matters, why it matters, or what to do next. This project tries to bridge that gap by creating an athlete-specific monitoring system that can answer questions like:
+Wearable dashboards often show many raw metrics but do not explain what matters, why it matters, or what to do next. This project tries to bridge that gap and consolidate things by creating an athlete-specific monitoring system that can answer questions like:
 
 - Is this day risky or just different?
 - Is the alert caused by running volume, progression, intensity, recovery strain, or the learned model?
 - Does this day resemble previous concerning blocks?
 - What would be a reasonable training adjustment?
 
-This is not a medical diagnosis tool. It is a training-context and decision-support system.
+I wanted to make something people could understand and respond to. With the coaching side they can even interect directly in a grounded way.
 
 ## Current results
 
