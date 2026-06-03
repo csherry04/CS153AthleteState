@@ -31,9 +31,9 @@ Wearable dashboards often show many raw metrics but do not explain what matters,
 - Does this day resemble previous concerning blocks?
 - What would be a reasonable training adjustment?
 
-I wanted to make something people could understand and respond to. With the coaching side they can even interect directly in a grounded way.
+I wanted to make something people could understand and respond to. With the coaching side they can even interact directly in a grounded way.
 
-## Current results
+## Evaluation & evidence
 
 Dataset snapshot:
 
