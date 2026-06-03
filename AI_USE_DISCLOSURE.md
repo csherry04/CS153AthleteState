@@ -2,19 +2,22 @@
 
 ## What I Used AI For
 
-This project used AI assistance heavily. AI was used primarily for implementing the ideas that I had come up with. It was how I coded, iterated code, tested, and in part documented my code. For most general typing work AI was used in large part. It gave me a long list of sources it found that I then selected from myself for the literature. 
+This project used AI assistance heavily. AI was a major part of my coding workflow: it helped me implement ideas, iterate on code, run and interpret tests, debug issues, generate local UI pages, and draft documentation. In many cases, AI was the practical coding foundation that let me turn the project concept into a working artifact.
+
+AI also helped surface possible scientific sources. I selected which sources to rely on, checked whether they fit the project, and used them to shape the literature-based score.
 
 ## What I Personally Defined
 
-With this said, the core project idea and all of the design choices that have come along the way came from me (aside from some basic UI things I let it decide).
+The core project idea and the main design choices came from me. I decided to build an athlete state monitoring system because I wanted better insight into my own training data.
 
-I decided on the project itself as an athlete state monitoring system as I thought it would be useful for my own training insights. On top of this I had the idea to have the seperate scoring concepts of one based on more concrete literature bencmarks, one that was personal but again concrete via percentiles, and another that was more complex with learned embeddings and conclusions drawn based on the embeddings. I chose readiness score as the benchmark to model off of beacuse I felt it was meaningful and likely has nuance decided by thousands of Garmin users data when to build such a stat myself from scrath would not be reliable as I only have my own data. I chose to use a TCN as well as my model. Furthermore, the UI and pages are deigned by me. I allowed the AI to take liberties with writing descrptions etc but these were all outlined by me first and every page was something I requested. 
+I chose the scoring structure: one literature-based score using published training-load concepts, one personalized score using my own historical percentiles, one learned frontier score using model embeddings, and one integrated score that combines the interpretable and learned signals. I tuned the balance of those equations, chose the reference events used for retrospective checks, collected the Garmin data myself, and decided to use Garmin readiness as the modeling benchmark because it was a meaningful existing target with more background signal than I could create from a single-athlete dataset.
+
+I also chose to use a TCN for the sequence model and directed the UI/page structure. AI sometimes filled in wording or implementation details, but the pages, scoring concepts, evaluation direction, and project framing were things I requested and reviewed.
 
 ## Human Collaborators and Sources
 
-ALl the code is from scratch, no sources or forks
+There were no other human collaborators.
 
-External sources are cited in `SCIENTIFIC_RATIONALE.md` which are scientific papers used for the literature score. 
+The code was not built from a forked base repository. External scientific sources used for the literature score are cited in `SCIENTIFIC_RATIONALE.md`.
 
-No other people contributed
-
+This is not a clinical or medical model. It is a personal training-analysis project built from private Garmin data.

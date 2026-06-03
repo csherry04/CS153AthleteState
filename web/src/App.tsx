@@ -10,10 +10,12 @@ import ProjectOverview from './pages/ProjectOverview';
 import Coach from './pages/Coach';
 import MethodsResults from './pages/MethodsResults';
 import EvaluationReproducibility from './pages/EvaluationReproducibility';
+import ScoreEquations from './pages/ScoreEquations';
 
 const navItems = [
   { path: '/', label: 'Project overview' },
   { path: '/methods-results', label: 'Methods & results' },
+  { path: '/score-equations', label: 'Score equations' },
   { path: '/evaluation-reproducibility', label: 'Evaluation & reproducibility' },
   { path: '/athlete-profile', label: 'Athlete profile' },
   { path: '/daily-briefing', label: 'Daily briefing' },
@@ -22,7 +24,7 @@ const navItems = [
   { path: '/frontier-outcomes', label: 'Frontier outcomes' },
   { path: '/ingestion-validation', label: 'Ingestion validation' },
   { path: '/coaching-qa', label: 'Coaching QA (static)' },
-  { path: '/coach', label: 'Coach (live)' },
+  ...(import.meta.env.DEV ? [{ path: '/coach', label: 'Coach (live)' }] : []),
 ];
 
 export default function App() {
@@ -51,6 +53,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<ProjectOverview />} />
           <Route path="/methods-results" element={<MethodsResults />} />
+          <Route path="/score-equations" element={<ScoreEquations />} />
           <Route path="/evaluation-reproducibility" element={<EvaluationReproducibility />} />
           <Route path="/athlete-profile" element={<AthleteProfile />} />
           <Route path="/daily-briefing" element={<DailyBriefing />} />
@@ -59,7 +62,7 @@ export default function App() {
           <Route path="/frontier-outcomes" element={<FrontierOutcomes />} />
           <Route path="/ingestion-validation" element={<IngestionValidation />} />
           <Route path="/coaching-qa" element={<CoachingQA />} />
-          <Route path="/coach" element={<Coach />} />
+          {import.meta.env.DEV && <Route path="/coach" element={<Coach />} />}
         </Routes>
       </main>
     </div>

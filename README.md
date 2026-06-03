@@ -40,9 +40,8 @@ Modeling evidence:
 
 | Model | Result / role |
 |---|---|
-| Naive persistence | baseline sanity check |
-| Ridge regression | linear tabular baseline |
-| MLP | nonlinear tabular baseline |
+| Ridge regression | MAE `18.52`, RMSE `22.62`; linear tabular baseline |
+| MLP | MAE `20.74`, RMSE `25.35`; nonlinear tabular baseline |
 | Supervised TCN | MAE `14.01`, RMSE `17.12` |
 | Masked-pretrained TCN | MAE `12.26`, RMSE `15.31` |
 
@@ -60,16 +59,24 @@ Monitoring evidence:
 Retrospective reference checks:
 
 - Before the spring 2024 bone-stress reference window, accumulated frontier high appeared with `50` days lead and all-track agreement appeared with `52` days lead.
-- Before the Feb–Mar 2025 bike-heavy running ramp reference period, integrated high appeared with `56` days lead; accumulated frontier state stayed moderate in that lookback.
 
 These checks are retrospective validation aids. Event/reference dates are not used by the scoring algorithm.
 
 ## Local web app
 
+Static deployed demo:
+
+```text
+https://cs-153-athlete-state.vercel.app
+```
+
+The Vercel deployment is a static frontend demo. It includes the generated coaching examples, but not the live coach API route; the live coach remains available only when running the backend locally.
+
 The local app includes:
 
 - **Project overview** — system summary and score explanations
-- **Methods & results** — CS 153-friendly technical summary and model results
+- **Methods & results** — technical summary and model results
+- **Score equations** — compact formulas for the scoring/model outputs
 - **Evaluation & reproducibility** — evidence, limitations, and reproduction commands
 - **Athlete profile** — strengths, risk patterns, and athlete-specific score interpretation
 - **Daily briefing** — latest-day training recommendation
@@ -77,7 +84,8 @@ The local app includes:
 - **Bone stress periods** — detected high-load running blocks
 - **Frontier outcomes** — retrospective reference-window evaluation
 - **Ingestion validation** — data coverage and validation summary
-- **Coaching QA / Coach live** — static and API-backed coaching question interface
+- **Coaching QA** — static coaching question-and-answer examples
+- **Coach live** — API-backed coaching interface available only in local development
 
 ## Setup
 
@@ -152,7 +160,7 @@ python scripts/generate_coaching_qa.py
 python scripts/generate_athlete_profile.py
 ```
 
-Important: some generated canvas files can overwrite custom UI improvements. If regenerating canvases, verify `canvases/date-explorer.canvas.tsx` and other hand-polished pages before final submission.
+Generated canvas scripts update local UI artifacts. After regeneration, review the relevant page in the frontend before submission.
 
 ## Repository structure
 
@@ -178,6 +186,12 @@ data/processed/          Processed daily feature snapshots
 - `scripts/score_athlete_risk.py` — risk scoring and bone-stress running-load scores
 - `src/coach_api.py` — live local coaching API
 - `web/src/App.tsx` — local UI routes
+
+## Submission docs
+
+- `README.md` — main project overview, setup, results, and reproducibility guide
+- `SCIENTIFIC_RATIONALE.md` — literature sources and rationale behind the scoring design
+- `AI_USE_DISCLOSURE.md` — honest disclosure of AI assistance, human decisions, sources, and collaborators
 
 ## Process and AI Use
 
